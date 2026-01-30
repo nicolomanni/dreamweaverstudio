@@ -1,0 +1,19 @@
+{
+  "name": "data-access-db",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/server/data-access-db/src",
+  "projectType": "library",
+  "tags": ["scope:server", "type:data-access"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/server/data-access-db",
+        "main": "libs/server/data-access-db/src/index.ts",
+        "tsConfig": "libs/server/data-access-db/tsconfig.lib.json",
+        "assets": ["libs/server/data-access-db/*.md"]
+      }
+    }
+  }
+}

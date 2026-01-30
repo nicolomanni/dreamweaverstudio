@@ -14,7 +14,15 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@dreamweaverstudio/shared-types": ["libs/shared/types/src/index.ts"],
+      "@dreamweaverstudio/server-data-access-db": [
+        "libs/server/data-access-db/src/index.ts"
+      ],
+      "@dreamweaverstudio/client-data-access-api": [
+        "libs/client/data-access-api/src/index.ts"
+      ]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

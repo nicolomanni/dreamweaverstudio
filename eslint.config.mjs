@@ -22,8 +22,55 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: [
+                'type:feature',
+                'type:ui',
+                'type:data-access',
+                'type:util',
+                'type:types',
+              ],
+            },
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: [
+                'type:ui',
+                'type:data-access',
+                'type:util',
+                'type:types',
+              ],
+            },
+            {
+              sourceTag: 'type:ui',
+              onlyDependOnLibsWithTags: ['type:ui', 'type:util', 'type:types'],
+            },
+            {
+              sourceTag: 'type:data-access',
+              onlyDependOnLibsWithTags: [
+                'type:data-access',
+                'type:util',
+                'type:types',
+              ],
+            },
+            {
+              sourceTag: 'type:util',
+              onlyDependOnLibsWithTags: ['type:util', 'type:types'],
+            },
+            {
+              sourceTag: 'type:types',
+              onlyDependOnLibsWithTags: ['type:types'],
+            },
+            {
+              sourceTag: 'scope:client',
+              onlyDependOnLibsWithTags: ['scope:client', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:server',
+              onlyDependOnLibsWithTags: ['scope:server', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:shared',
+              onlyDependOnLibsWithTags: ['scope:shared'],
             },
           ],
         },
