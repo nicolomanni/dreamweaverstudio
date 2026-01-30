@@ -6,9 +6,9 @@ import {
   Outlet,
 } from '@tanstack/react-router';
 
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import { isAuthenticated } from './auth';
+import Login from './pages/login';
+import Dashboard from './pages/dashboard';
+import { getAuthState } from './auth';
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -18,8 +18,9 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: Login,
-  beforeLoad: () => {
-    if (isAuthenticated()) {
+  beforeLoad: async () => {
+    const user = await getAuthState();
+    if (user) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -29,8 +30,9 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
   component: Dashboard,
-  beforeLoad: () => {
-    if (!isAuthenticated()) {
+  beforeLoad: async () => {
+    const user = await getAuthState();
+    if (!user) {
       throw redirect({ to: '/' });
     }
   },
