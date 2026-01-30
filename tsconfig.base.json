@@ -21,7 +21,8 @@
       ],
       "@dreamweaverstudio/client-data-access-api": [
         "libs/client/data-access-api/src/index.ts"
-      ]
+      ],
+      "@dreamweaverstudio/client-ui": ["libs/client/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

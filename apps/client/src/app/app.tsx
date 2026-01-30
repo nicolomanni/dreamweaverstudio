@@ -1,12 +1,15 @@
-// Uncomment this line to use CSS modules
-// import styles from './app.module.css';
-import NxWelcome from './nx-welcome';
+import { RouterProvider } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import { router } from '../router';
 
 export function App() {
   return (
-    <div>
-      <NxWelcome title="client" />
-    </div>
+    <>
+      <RouterProvider router={router} />
+      {import.meta.env.DEV ? (
+        <TanStackRouterDevtools router={router} position="bottom-right" />
+      ) : null}
+    </>
   );
 }
 
