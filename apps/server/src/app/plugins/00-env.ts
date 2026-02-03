@@ -9,6 +9,9 @@ const schema = {
     MONGO_URI: { type: 'string', default: 'mongodb://localhost:27017/dreamweaverstudio' },
     HOST: { type: 'string', default: 'localhost' },
     PORT: { type: 'integer', default: 3000 },
+    CORS_ORIGIN: { type: 'string', default: '' },
+    GEMINI_API_KEY: { type: 'string' },
+    STRIPE_SECRET: { type: 'string' },
   },
 };
 

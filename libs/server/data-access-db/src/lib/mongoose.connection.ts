@@ -12,7 +12,11 @@ export async function connectToMongo(uri: string): Promise<typeof mongoose> {
   }
 
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(uri);
+    connectionPromise = mongoose.connect(uri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
   }
 
   return connectionPromise;

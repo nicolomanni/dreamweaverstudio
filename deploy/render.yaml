@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: dreamweaver-server
+    env: node
+    plan: starter
+    buildCommand: npm ci --include=dev && npx nx build server
+    startCommand: node dist/apps/server/main.js
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET
+        sync: false
+  - type: static
+    name: dreamweaver-client
+    env: static
+    buildCommand: npm ci --include=dev && npx nx build client
+    staticPublishPath: dist/apps/client
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
