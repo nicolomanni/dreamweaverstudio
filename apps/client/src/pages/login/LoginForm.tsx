@@ -42,7 +42,16 @@ const LoginForm: React.FC = () => {
   return (
     <div className="w-full max-w-lg dw-fade-up">
       <div className="flex flex-col items-start gap-3">
-        <img src="/logo-dw.png" alt="DreamWeaver Studio" className="h-12 w-auto" />
+        <img
+          src="/logo-dw.svg"
+          alt="DreamWeaver Studio"
+          className="h-12 w-auto dark:hidden"
+        />
+        <img
+          src="/logo-dw-light.svg"
+          alt="DreamWeaver Studio"
+          className="hidden h-12 w-auto dark:block"
+        />
       </div>
       <div className="mt-8">
         <h1 className="text-3xl font-semibold text-foreground">

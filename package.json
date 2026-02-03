@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nx run-many -t serve --projects=client,server --parallel"
+    "dev": "nx run-many -t serve --projects=client,server --parallel",
+    "deploy:server": "gcloud builds submit --tag gcr.io/$PROJECT_ID/dreamweaver-server -f apps/server/Dockerfile . && gcloud run deploy dreamweaver-server --image gcr.io/$PROJECT_ID/dreamweaver-server --platform managed --region $REGION --allow-unauthenticated --set-env-vars HOST=0.0.0.0,PORT=8080,MONGO_URI=$MONGO_URI,GEMINI_API_KEY=$GEMINI_API_KEY,STRIPE_SECRET=$STRIPE_SECRET,STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET",
+    "deploy:server:secrets": "gcloud builds submit --tag gcr.io/$PROJECT_ID/dreamweaver-server -f apps/server/Dockerfile . && gcloud run deploy dreamweaver-server --image gcr.io/$PROJECT_ID/dreamweaver-server --platform managed --region $REGION --allow-unauthenticated --set-env-vars HOST=0.0.0.0,PORT=8080 --set-secrets MONGO_URI=MONGO_URI:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,STRIPE_SECRET=STRIPE_SECRET:latest",
+    "deploy:client": "nx build client && firebase deploy --only hosting",
+    "deploy:all": "npm run deploy:server && npm run deploy:client",
+    "deploy:all:secrets": "npm run deploy:server:secrets && npm run deploy:client"
   },
   "private": true,
   "devDependencies": {

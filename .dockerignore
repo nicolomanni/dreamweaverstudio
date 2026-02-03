@@ -1,0 +1,10 @@
+node_modules
+dist
+.nx
+.git
+.vscode
+tmp
+**/.DS_Store
+**/*.log
+apps/client
+apps/server/node_modules

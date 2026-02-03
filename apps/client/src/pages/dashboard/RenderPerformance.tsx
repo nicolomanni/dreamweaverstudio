@@ -1,35 +1,36 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUpRightDots } from '@fortawesome/free-solid-svg-icons';
+import { useState } from 'react';
 
 const RenderPerformance = () => {
+  const [active, setActive] = useState<'all' | 'campaign' | 'email'>('all');
   return (
-    <div className="rounded-2xl border border-border bg-card/80 p-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-foreground/50">
-            Render Performance
-          </p>
-          <h3 className="mt-2 text-lg font-semibold text-foreground">
-            Weekly Output
-          </h3>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
+          Ads performance
+        </h3>
+        <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs font-semibold text-slate-600 dark:bg-background dark:text-foreground/70">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'campaign', label: 'Campaign' },
+            { id: 'email', label: 'Email' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActive(tab.id as typeof active)}
+              className={`rounded-full px-3 py-1 ${
+                active === tab.id
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-card dark:text-foreground'
+                  : 'text-slate-500 dark:text-foreground/60'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-        <span className="flex items-center gap-2 text-xs text-foreground/60">
-          <FontAwesomeIcon icon={faArrowUpRightDots} />
-          +12% vs last week
-        </span>
       </div>
-      <div className="mt-6 h-48 rounded-2xl border border-border bg-background/60">
-        <div className="h-full w-full rounded-2xl bg-[linear-gradient(120deg,rgba(6,182,212,0.15),rgba(139,92,246,0.05))]" />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-foreground/60">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-          <span
-            key={day}
-            className="rounded-full border border-border bg-background/70 px-3 py-1"
-          >
-            {day}
-          </span>
-        ))}
+      <div className="mt-6 h-64 rounded-2xl border border-slate-200 bg-slate-50 dark:border-border dark:bg-background">
+        <div className="h-full w-full rounded-2xl bg-[linear-gradient(120deg,rgba(34,211,238,0.12),rgba(124,92,255,0.08))]" />
       </div>
     </div>
   );

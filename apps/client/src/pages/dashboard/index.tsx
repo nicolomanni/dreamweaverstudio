@@ -38,7 +38,7 @@ const Dashboard = () => {
     <DashboardLayout
       projectTitle="Neon City Chronicles"
       credits={420}
-      activeNav="projects"
+      activeNav="marketing"
       onLogout={handleLogout}
       userName={userName}
       userEmail={userEmail}

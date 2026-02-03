@@ -1,7 +1,7 @@
 const QuickActions = () => {
   return (
-    <div className="rounded-2xl border border-border bg-gradient-to-br from-card/80 via-background/80 to-card/60 p-6">
-      <p className="text-xs uppercase tracking-[0.4em] text-foreground/60">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+      <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-foreground/60">
         Quick Actions
       </p>
       <div className="mt-4 space-y-3">
@@ -13,12 +13,14 @@ const QuickActions = () => {
           <button
             key={action.title}
             type="button"
-            className="flex w-full flex-col items-start gap-1 rounded-xl border border-border bg-background/70 px-4 py-3 text-left transition-colors duration-200 hover:bg-card"
+            className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-colors duration-200 hover:bg-white dark:border-border dark:bg-background dark:hover:bg-card/80"
           >
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-slate-900 dark:text-foreground">
               {action.title}
             </span>
-            <span className="text-xs text-foreground/60">{action.detail}</span>
+            <span className="text-xs text-slate-500 dark:text-foreground/60">
+              {action.detail}
+            </span>
           </button>
         ))}
       </div>

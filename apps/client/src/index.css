@@ -77,4 +77,14 @@
         transparent 1px
       );
   }
+
+  .dw-scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .dw-scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
