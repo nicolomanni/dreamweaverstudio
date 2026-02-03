@@ -1,7 +1,69 @@
 @config "../tailwind.config.js";
 @import "tailwindcss";
 
+@layer base {
+  :root {
+    --dw-bg: #f5f7fb;
+    --dw-fg: #111827;
+    --dw-primary: #6d5bff;
+    --dw-secondary: #22b8ff;
+    --dw-card: #ffffff;
+    --dw-border: #e2e8f0;
+    --dw-input: #d8e2f0;
+  }
+
+  .dark {
+    --dw-bg: #0b0f1a;
+    --dw-fg: #e9eef7;
+    --dw-primary: #7c5cff;
+    --dw-secondary: #22d3ee;
+    --dw-card: #111827;
+    --dw-border: #1f2a44;
+    --dw-input: #1f2a44;
+  }
+
+  body {
+    background-color: var(--dw-bg);
+    color: var(--dw-fg);
+  }
+}
+
 @layer utilities {
+  @keyframes dw-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes dw-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .dw-fade-up {
+    animation: dw-fade-up 0.6s ease both;
+  }
+
+  .dw-fade-in {
+    animation: dw-fade-in 0.8s ease both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dw-fade-up,
+    .dw-fade-in {
+      animation: none;
+    }
+  }
+
   .bg-grid-pattern {
     background-size: 40px 40px;
     background-image: linear-gradient(

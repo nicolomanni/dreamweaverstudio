@@ -8,6 +8,7 @@ import {
 
 import Login from './pages/login';
 import Dashboard from './pages/dashboard';
+import ForgotPasswordPage from './pages/forgot-password';
 import { getAuthState } from './auth';
 
 const rootRoute = createRootRoute({
@@ -38,7 +39,17 @@ const dashboardRoute = createRoute({
   },
 });
 
-const routeTree = rootRoute.addChildren([loginRoute, dashboardRoute]);
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/forgot-password',
+  component: ForgotPasswordPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  dashboardRoute,
+  forgotPasswordRoute,
+]);
 
 export const router = createRouter({ routeTree });
 

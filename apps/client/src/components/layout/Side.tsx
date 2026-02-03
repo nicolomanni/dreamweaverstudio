@@ -1,12 +1,17 @@
 import React from 'react';
-import logo from '/logo-dw.png';
+import authSide from '/auth-side-bg.png';
 
 const Side: React.FC = () => {
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 bg-white text-black">
-      <div className="max-w-md text-center">
-        <img src={logo} alt="DreamWeaver Logo" className="w-full" />
-      </div>
+    <div className="relative hidden h-screen items-center justify-center p-6 lg:flex lg:w-[55%] dw-fade-in">
+      <div
+        className="h-full w-full bg-right bg-no-repeat"
+        style={{
+          backgroundImage: `url(${authSide})`,
+          backgroundSize: 'auto 100%',
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 };

@@ -10,13 +10,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#09090b',
-        foreground: '#e4e4e7',
-        primary: '#06b6d4',
-        secondary: '#8b5cf6',
-        card: '#18181b',
-        border: '#27272a',
-        input: '#27272a',
+        background: 'var(--dw-bg)',
+        foreground: 'var(--dw-fg)',
+        primary: 'var(--dw-primary)',
+        secondary: 'var(--dw-secondary)',
+        card: 'var(--dw-card)',
+        border: 'var(--dw-border)',
+        input: 'var(--dw-input)',
       },
     },
   },
