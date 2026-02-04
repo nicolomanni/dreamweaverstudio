@@ -2,11 +2,20 @@ export type StripeIntegrationSettings = {
   enabled: boolean;
   secretKey?: string;
   publishableKey?: string;
+  defaultCurrency?: string;
 };
 
 export type GeminiIntegrationSettings = {
   enabled: boolean;
   apiKey?: string;
+  model?: string;
+  temperature?: number;
+  maxOutputTokens?: number;
+  safetyPreset?: 'strict' | 'balanced' | 'relaxed';
+  systemPrompt?: string;
+  streaming?: boolean;
+  timeoutSec?: number;
+  retryCount?: number;
 };
 
 export type DeviantArtIntegrationSettings = {
@@ -32,6 +41,8 @@ export type StudioSettings = {
   email: string;
   studioName: string;
   timezone: string;
+  creditAlertThreshold?: number;
+  numberFormatLocale?: string;
   createdAt?: string;
   updatedAt?: string;
 };

@@ -11,6 +11,8 @@ type GeneralPayload = {
   email?: string;
   studioName?: string;
   timezone?: string;
+  creditAlertThreshold?: number;
+  numberFormatLocale?: string;
 };
 
 type ProfilePayload = {

@@ -6,6 +6,7 @@ const StripeIntegrationSchema = new Schema<IntegrationSettings['stripe']>(
     enabled: { type: Boolean, default: false },
     secretKey: { type: String },
     publishableKey: { type: String },
+    defaultCurrency: { type: String },
   },
   { _id: false },
 );
@@ -14,6 +15,14 @@ const GeminiIntegrationSchema = new Schema<IntegrationSettings['gemini']>(
   {
     enabled: { type: Boolean, default: false },
     apiKey: { type: String },
+    model: { type: String },
+    temperature: { type: Number },
+    maxOutputTokens: { type: Number },
+    safetyPreset: { type: String },
+    systemPrompt: { type: String },
+    streaming: { type: Boolean },
+    timeoutSec: { type: Number },
+    retryCount: { type: Number },
   },
   { _id: false },
 );

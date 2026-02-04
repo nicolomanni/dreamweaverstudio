@@ -34,8 +34,24 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 }
 
 export type IntegrationSettingsResponse = {
-  stripe: { enabled: boolean; hasSecret: boolean; last4?: string };
-  gemini: { enabled: boolean; hasSecret: boolean };
+  stripe: {
+    enabled: boolean;
+    hasSecret: boolean;
+    last4?: string;
+    defaultCurrency?: string;
+  };
+  gemini: {
+    enabled: boolean;
+    hasSecret: boolean;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+    safetyPreset?: 'strict' | 'balanced' | 'relaxed';
+    systemPrompt?: string;
+    streaming?: boolean;
+    timeoutSec?: number;
+    retryCount?: number;
+  };
   deviantArt: { enabled: boolean; hasSecret: boolean };
 };
 
@@ -57,6 +73,7 @@ export async function updateStripeSettings(payload: {
   enabled?: boolean;
   secretKey?: string;
   publishableKey?: string;
+  defaultCurrency?: string;
 }): Promise<IntegrationSettingsResponse['stripe']> {
   const headers = {
     'Content-Type': 'application/json',
@@ -77,6 +94,14 @@ export async function updateStripeSettings(payload: {
 export async function updateGeminiSettings(payload: {
   enabled?: boolean;
   apiKey?: string;
+  model?: string;
+  temperature?: number;
+  maxOutputTokens?: number;
+  safetyPreset?: 'strict' | 'balanced' | 'relaxed' | null;
+  systemPrompt?: string;
+  streaming?: boolean;
+  timeoutSec?: number;
+  retryCount?: number;
 }): Promise<IntegrationSettingsResponse['gemini']> {
   const headers = {
     'Content-Type': 'application/json',

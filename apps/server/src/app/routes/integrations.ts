@@ -11,11 +11,20 @@ type StripePayload = {
   enabled?: boolean;
   secretKey?: string;
   publishableKey?: string;
+  defaultCurrency?: string;
 };
 
 type GeminiPayload = {
   enabled?: boolean;
   apiKey?: string;
+  model?: string;
+  temperature?: number;
+  maxOutputTokens?: number;
+  safetyPreset?: 'strict' | 'balanced' | 'relaxed' | null;
+  systemPrompt?: string;
+  streaming?: boolean;
+  timeoutSec?: number;
+  retryCount?: number;
 };
 
 type DeviantArtPayload = {
@@ -41,18 +50,27 @@ export default async function (fastify: FastifyInstance) {
     if (!settings) {
       return {
         stripe: { enabled: false, ...maskSecret(undefined) },
-        gemini: { enabled: false },
-        deviantArt: { enabled: false },
+        gemini: { enabled: false, ...maskKey(undefined) },
+        deviantArt: { enabled: false, ...maskKey(undefined) },
       };
     }
 
     return {
       stripe: {
         enabled: settings.stripe?.enabled ?? false,
+        defaultCurrency: settings.stripe?.defaultCurrency,
         ...maskSecret(settings.stripe?.secretKey),
       },
       gemini: {
         enabled: settings.gemini?.enabled ?? false,
+        model: settings.gemini?.model,
+        temperature: settings.gemini?.temperature,
+        maxOutputTokens: settings.gemini?.maxOutputTokens,
+        safetyPreset: settings.gemini?.safetyPreset,
+        systemPrompt: settings.gemini?.systemPrompt,
+        streaming: settings.gemini?.streaming,
+        timeoutSec: settings.gemini?.timeoutSec,
+        retryCount: settings.gemini?.retryCount,
         ...maskKey(settings.gemini?.apiKey),
       },
       deviantArt: {
@@ -68,11 +86,13 @@ export default async function (fastify: FastifyInstance) {
       enabled: payload.enabled,
       secretKey: payload.secretKey,
       publishableKey: payload.publishableKey,
+      defaultCurrency: payload.defaultCurrency,
     });
 
     return {
       stripe: {
         enabled: updated.stripe?.enabled ?? false,
+        defaultCurrency: updated.stripe?.defaultCurrency,
         ...maskSecret(updated.stripe?.secretKey),
       },
     };
@@ -83,11 +103,27 @@ export default async function (fastify: FastifyInstance) {
     const updated = await updateGeminiIntegration({
       enabled: payload.enabled,
       apiKey: payload.apiKey,
+      model: payload.model,
+      temperature: payload.temperature,
+      maxOutputTokens: payload.maxOutputTokens,
+      safetyPreset: payload.safetyPreset,
+      systemPrompt: payload.systemPrompt,
+      streaming: payload.streaming,
+      timeoutSec: payload.timeoutSec,
+      retryCount: payload.retryCount,
     });
 
     return {
       gemini: {
         enabled: updated.gemini?.enabled ?? false,
+        model: updated.gemini?.model,
+        temperature: updated.gemini?.temperature,
+        maxOutputTokens: updated.gemini?.maxOutputTokens,
+        safetyPreset: updated.gemini?.safetyPreset,
+        systemPrompt: updated.gemini?.systemPrompt,
+        streaming: updated.gemini?.streaming,
+        timeoutSec: updated.gemini?.timeoutSec,
+        retryCount: updated.gemini?.retryCount,
         ...maskKey(updated.gemini?.apiKey),
       },
     };

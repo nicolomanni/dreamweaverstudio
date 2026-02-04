@@ -1,4 +1,11 @@
-const QuickActions = () => {
+import { formatCurrencyCompact } from '../../utils/currency';
+
+type QuickActionsProps = {
+  currency?: string;
+  locale?: string;
+};
+
+const QuickActions = ({ currency = 'USD', locale = 'en-US' }: QuickActionsProps) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
@@ -16,9 +23,9 @@ const QuickActions = () => {
       </div>
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         {[
-          { label: 'Direct sales', value: '$9.2k' },
-          { label: 'Marketplace', value: '$6.4k' },
-          { label: 'Licensing', value: '$4.8k' },
+          { label: 'Direct sales', amount: 9200 },
+          { label: 'Marketplace', amount: 6400 },
+          { label: 'Licensing', amount: 4800 },
         ].map((item) => (
           <div
             key={item.label}
@@ -28,7 +35,7 @@ const QuickActions = () => {
               {item.label}
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-              {item.value}
+              {formatCurrencyCompact(item.amount, currency, locale)}
             </p>
           </div>
         ))}

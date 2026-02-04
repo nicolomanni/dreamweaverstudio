@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import LoginForm from './LoginForm';
 import Side from '../../components/layout/Side';
 
 const LoginPage: React.FC = () => {
+  useEffect(() => {
+    document.title = 'Sign In — DreamWeaverComics Studio';
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <div className="relative flex w-full flex-col items-center justify-center px-8 py-12 sm:px-12 lg:w-3/4 lg:px-24 xl:px-28">

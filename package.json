@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nx run-many -t serve --projects=client,server --parallel",
+    "dev:server": "nx serve server",
     "deploy:client": "nx build client",
     "release": "nx release"
   },

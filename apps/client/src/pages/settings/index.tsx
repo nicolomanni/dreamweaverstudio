@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardLayout } from '@dreamweaverstudio/client-ui';
 import {
   fetchIntegrationSettings,
@@ -11,11 +11,16 @@ import {
   updateStudioSettings,
   updateUserProfile,
   firebaseApp,
+  type IntegrationSettingsResponse,
 } from '@dreamweaverstudio/client-data-access-api';
 import { onAuthChange, signOutUser } from '../../auth';
 import { useNavigate } from '@tanstack/react-router';
 import {
   CheckCircle2,
+  ChevronDown,
+  Lock,
+  PencilLine,
+  X,
   XCircle,
   SlidersHorizontal,
   User,
@@ -23,6 +28,79 @@ import {
 } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import { formatCurrency, normalizeCurrency } from '../../utils/currency';
+
+const STRIPE_CURRENCY_OPTIONS = [
+  { value: 'USD', label: 'USD - US Dollar' },
+  { value: 'EUR', label: 'EUR - Euro' },
+  { value: 'GBP', label: 'GBP - British Pound' },
+  { value: 'CAD', label: 'CAD - Canadian Dollar' },
+  { value: 'AUD', label: 'AUD - Australian Dollar' },
+];
+
+const NUMBER_FORMAT_OPTIONS = [
+  { value: 'en-US', label: 'English (1,234.56)' },
+  { value: 'it-IT', label: 'Italiano (1.234,56)' },
+  { value: 'de-DE', label: 'Deutsch (1.234,56)' },
+];
+
+const GEMINI_MODEL_OPTIONS = [
+  { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview)' },
+  { value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image (Preview)' },
+  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  {
+    value: 'gemini-2.5-pro-preview-tts',
+    label: 'Gemini 2.5 Pro TTS (Preview)',
+  },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  {
+    value: 'gemini-2.5-flash-preview-09-2025',
+    label: 'Gemini 2.5 Flash (Preview 09/2025)',
+  },
+  {
+    value: 'gemini-2.5-flash-image',
+    label: 'Gemini 2.5 Flash Image',
+  },
+  {
+    value: 'gemini-2.5-flash-native-audio-preview-12-2025',
+    label: 'Gemini 2.5 Flash Live Audio (Preview 12/2025)',
+  },
+  {
+    value: 'gemini-2.5-flash-preview-tts',
+    label: 'Gemini 2.5 Flash TTS (Preview)',
+  },
+  { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
+  {
+    value: 'gemini-2.5-flash-lite-preview-09-2025',
+    label: 'Gemini 2.5 Flash-Lite (Preview 09/2025)',
+  },
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Deprecated)' },
+  {
+    value: 'gemini-2.0-flash-001',
+    label: 'Gemini 2.0 Flash 001 (Deprecated)',
+  },
+  {
+    value: 'gemini-2.0-flash-exp',
+    label: 'Gemini 2.0 Flash Experimental (Deprecated)',
+  },
+  {
+    value: 'gemini-2.0-flash-lite',
+    label: 'Gemini 2.0 Flash-Lite (Deprecated)',
+  },
+  {
+    value: 'gemini-2.0-flash-lite-001',
+    label: 'Gemini 2.0 Flash-Lite 001 (Deprecated)',
+  },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Legacy)' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Legacy)' },
+];
+
+const GEMINI_SAFETY_OPTIONS = [
+  { value: 'strict', label: 'Strict' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'relaxed', label: 'Relaxed' },
+];
 
 const Toggle = ({
   enabled,
@@ -72,20 +150,40 @@ const SettingsPage = () => {
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeHasSecret, setStripeHasSecret] = useState(false);
-  const [stripeBalance, setStripeBalance] = useState<string>('—');
+  const [stripeBalanceAmount, setStripeBalanceAmount] = useState<number | null>(
+    null,
+  );
+  const [stripeBalanceLoading, setStripeBalanceLoading] = useState(true);
+  const [stripeKeyEditable, setStripeKeyEditable] = useState(true);
+  const [stripeDefaultCurrency, setStripeDefaultCurrency] = useState('USD');
   const [geminiEnabled, setGeminiEnabled] = useState(false);
   const [geminiKey, setGeminiKey] = useState('');
   const [geminiHasKey, setGeminiHasKey] = useState(false);
+  const [geminiKeyEditable, setGeminiKeyEditable] = useState(true);
+  const [geminiModel, setGeminiModel] = useState('gemini-1.5-pro');
+  const [geminiTemperature, setGeminiTemperature] = useState(0.7);
+  const [geminiMaxTokens, setGeminiMaxTokens] = useState(2048);
+  const [geminiSafetyEnabled, setGeminiSafetyEnabled] = useState(true);
+  const [geminiSafetyPreset, setGeminiSafetyPreset] = useState<
+    'strict' | 'balanced' | 'relaxed'
+  >('balanced');
+  const [geminiSystemPrompt, setGeminiSystemPrompt] = useState('');
+  const [geminiStreaming, setGeminiStreaming] = useState(true);
+  const [geminiTimeoutSec, setGeminiTimeoutSec] = useState(60);
+  const [geminiRetryCount, setGeminiRetryCount] = useState(2);
   const [deviantEnabled, setDeviantEnabled] = useState(false);
   const [deviantClientId, setDeviantClientId] = useState('');
   const [deviantClientSecret, setDeviantClientSecret] = useState('');
   const [deviantHasSecret, setDeviantHasSecret] = useState(false);
+  const [deviantKeyEditable, setDeviantKeyEditable] = useState(true);
   const [studioDisplayName, setStudioDisplayName] = useState(
     'hello@dreamweavercomics.art',
   );
   const [studioEmail, setStudioEmail] = useState('hello@dreamweavercomics.art');
   const [studioName, setStudioName] = useState('DreamWeaverComics');
   const [studioTimezone, setStudioTimezone] = useState('Europe/Rome');
+  const [numberFormatLocale, setNumberFormatLocale] = useState('en-US');
+  const [creditAlertThreshold, setCreditAlertThreshold] = useState(200);
   const [savingStudio, setSavingStudio] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingIntegrations, setSavingIntegrations] = useState(false);
@@ -99,6 +197,8 @@ const SettingsPage = () => {
     email: string;
     studioName: string;
     timezone: string;
+    numberFormatLocale: string;
+    creditAlertThreshold: number;
   } | null>(null);
   const [initialProfile, setInitialProfile] = useState<{
     displayName: string;
@@ -108,8 +208,18 @@ const SettingsPage = () => {
   const [initialIntegrations, setInitialIntegrations] = useState<{
     stripeEnabled: boolean;
     stripeSecret: string;
+    stripeDefaultCurrency: string;
     geminiEnabled: boolean;
     geminiKey: string;
+    geminiModel: string;
+    geminiTemperature: number;
+    geminiMaxTokens: number;
+    geminiSafetyEnabled: boolean;
+    geminiSafetyPreset: 'strict' | 'balanced' | 'relaxed';
+    geminiSystemPrompt: string;
+    geminiStreaming: boolean;
+    geminiTimeoutSec: number;
+    geminiRetryCount: number;
     deviantEnabled: boolean;
     deviantClientId: string;
     deviantClientSecret: string;
@@ -128,12 +238,26 @@ const SettingsPage = () => {
   const studioDisabled = loading || savingStudio;
   const profileDisabled = loading || savingProfile || uploadingAvatar;
   const integrationsDisabled = loading || savingIntegrations;
+  const stripeBalance =
+    stripeBalanceAmount !== null
+      ? formatCurrency(
+          stripeBalanceAmount / 100,
+          stripeDefaultCurrency,
+          {},
+          numberFormatLocale,
+        )
+      : '—';
   const isStudioDirty = Boolean(
     initialStudio &&
       (studioDisplayName !== initialStudio.displayName ||
         studioEmail !== initialStudio.email ||
         studioName !== initialStudio.studioName ||
-        studioTimezone !== initialStudio.timezone),
+        studioTimezone !== initialStudio.timezone ||
+        numberFormatLocale !== initialStudio.numberFormatLocale),
+  );
+  const creditAlertDirty = Boolean(
+    initialStudio &&
+      creditAlertThreshold !== initialStudio.creditAlertThreshold,
   );
   const isProfileDirty = Boolean(
     initialProfile &&
@@ -145,12 +269,69 @@ const SettingsPage = () => {
     initialIntegrations &&
       (stripeEnabled !== initialIntegrations.stripeEnabled ||
         stripeSecret !== initialIntegrations.stripeSecret ||
+        stripeDefaultCurrency !== initialIntegrations.stripeDefaultCurrency ||
         geminiEnabled !== initialIntegrations.geminiEnabled ||
         geminiKey !== initialIntegrations.geminiKey ||
+        geminiModel !== initialIntegrations.geminiModel ||
+        geminiTemperature !== initialIntegrations.geminiTemperature ||
+        geminiMaxTokens !== initialIntegrations.geminiMaxTokens ||
+        geminiSafetyEnabled !== initialIntegrations.geminiSafetyEnabled ||
+        geminiSafetyPreset !== initialIntegrations.geminiSafetyPreset ||
+        geminiSystemPrompt !== initialIntegrations.geminiSystemPrompt ||
+        geminiStreaming !== initialIntegrations.geminiStreaming ||
+        geminiTimeoutSec !== initialIntegrations.geminiTimeoutSec ||
+        geminiRetryCount !== initialIntegrations.geminiRetryCount ||
         deviantEnabled !== initialIntegrations.deviantEnabled ||
         deviantClientId !== initialIntegrations.deviantClientId ||
-        deviantClientSecret !== initialIntegrations.deviantClientSecret),
+        deviantClientSecret !== initialIntegrations.deviantClientSecret ||
+        creditAlertDirty),
   );
+
+  const geminiModelOptions = useMemo(() => {
+    if (!geminiModel) return GEMINI_MODEL_OPTIONS;
+    const exists = GEMINI_MODEL_OPTIONS.some(
+      (option) => option.value === geminiModel,
+    );
+    if (exists) return GEMINI_MODEL_OPTIONS;
+    return [
+      { value: geminiModel, label: `Current (${geminiModel})` },
+      ...GEMINI_MODEL_OPTIONS,
+    ];
+  }, [geminiModel]);
+
+  const stripeCurrencyOptions = useMemo(() => {
+    const normalized = normalizeCurrency(stripeDefaultCurrency);
+    const exists = STRIPE_CURRENCY_OPTIONS.some(
+      (option) => option.value === normalized,
+    );
+    if (exists) return STRIPE_CURRENCY_OPTIONS;
+    return [
+      { value: normalized, label: `Current (${normalized})` },
+      ...STRIPE_CURRENCY_OPTIONS,
+    ];
+  }, [stripeDefaultCurrency]);
+
+  const numberFormatOptions = useMemo(() => {
+    const normalized = numberFormatLocale || 'en-US';
+    const exists = NUMBER_FORMAT_OPTIONS.some(
+      (option) => option.value === normalized,
+    );
+    if (exists) return NUMBER_FORMAT_OPTIONS;
+    return [
+      { value: normalized, label: `Current (${normalized})` },
+      ...NUMBER_FORMAT_OPTIONS,
+    ];
+  }, [numberFormatLocale]);
+
+  useEffect(() => {
+    const sectionLabel =
+      activeSection === 'profile'
+        ? 'Profile'
+        : activeSection === 'integrations'
+          ? 'Integrations'
+          : 'Settings';
+    document.title = `${sectionLabel} — DreamWeaverComics Studio`;
+  }, [activeSection]);
 
   const pushToast = (type: 'success' | 'error', message: string) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -199,33 +380,48 @@ const SettingsPage = () => {
         setStripeHasSecret(settings.stripe.hasSecret);
         const stripeMasked = settings.stripe.hasSecret ? MASKED_VALUE : '';
         setStripeSecret(stripeMasked);
-        setGeminiEnabled(settings.gemini.enabled);
-        setGeminiHasKey(settings.gemini.hasSecret);
-        const geminiMasked = settings.gemini.hasSecret ? MASKED_VALUE : '';
-        setGeminiKey(geminiMasked);
+        setStripeKeyEditable(!settings.stripe.hasSecret);
+        const stripeCurrency = normalizeCurrency(settings.stripe.defaultCurrency);
+        setStripeDefaultCurrency(stripeCurrency);
+        const geminiState = applyGeminiSettings(settings.gemini);
         setDeviantEnabled(settings.deviantArt.enabled);
         setDeviantHasSecret(settings.deviantArt.hasSecret);
         const deviantMasked = settings.deviantArt.hasSecret ? MASKED_VALUE : '';
         setDeviantClientId(deviantMasked);
         setDeviantClientSecret(deviantMasked);
+        setDeviantKeyEditable(!settings.deviantArt.hasSecret);
         setInitialIntegrations({
           stripeEnabled: settings.stripe.enabled,
           stripeSecret: stripeMasked,
-          geminiEnabled: settings.gemini.enabled,
-          geminiKey: geminiMasked,
+          stripeDefaultCurrency: stripeCurrency,
+          geminiEnabled: geminiState.enabled,
+          geminiKey: geminiState.masked,
+          geminiModel: geminiState.model,
+          geminiTemperature: geminiState.temperature,
+          geminiMaxTokens: geminiState.maxOutputTokens,
+          geminiSafetyEnabled: geminiState.safetyEnabled,
+          geminiSafetyPreset: geminiState.safetyPreset,
+          geminiSystemPrompt: geminiState.systemPrompt,
+          geminiStreaming: geminiState.streaming,
+          geminiTimeoutSec: geminiState.timeoutSec,
+          geminiRetryCount: geminiState.retryCount,
           deviantEnabled: settings.deviantArt.enabled,
           deviantClientId: deviantMasked,
           deviantClientSecret: deviantMasked,
         });
         if (settings.stripe.enabled) {
-          const balance = await fetchStripeBalance();
-          if (mounted && balance.enabled && balance.available !== undefined) {
-            const formatted = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: balance.currency ?? 'USD',
-            }).format(balance.available / 100);
-            setStripeBalance(formatted);
+          setStripeBalanceLoading(true);
+          try {
+            const balance = await fetchStripeBalance();
+            if (mounted && balance.enabled && balance.available !== undefined) {
+              setStripeBalanceAmount(balance.available);
+            }
+          } finally {
+            if (mounted) setStripeBalanceLoading(false);
           }
+        } else {
+          setStripeBalanceAmount(null);
+          setStripeBalanceLoading(false);
         }
       } catch (err) {
         if (mounted) {
@@ -265,11 +461,15 @@ const SettingsPage = () => {
           setStudioEmail(studio.email);
           setStudioName(studio.studioName);
           setStudioTimezone(studio.timezone);
+          setNumberFormatLocale(studio.numberFormatLocale ?? 'en-US');
+          setCreditAlertThreshold(studio.creditAlertThreshold ?? 200);
           setInitialStudio({
             displayName: studio.displayName,
             email: studio.email,
             studioName: studio.studioName,
             timezone: studio.timezone,
+            numberFormatLocale: studio.numberFormatLocale ?? 'en-US',
+            creditAlertThreshold: studio.creditAlertThreshold ?? 200,
           });
         }
       } catch (err) {
@@ -327,6 +527,48 @@ const SettingsPage = () => {
     return false;
   };
 
+  const applyGeminiSettings = (gemini: IntegrationSettingsResponse['gemini']) => {
+    const masked = gemini.hasSecret ? MASKED_VALUE : '';
+    const model = gemini.model ?? 'gemini-1.5-pro';
+    const temperature = gemini.temperature ?? 0.7;
+    const maxOutputTokens = gemini.maxOutputTokens ?? 2048;
+    const safetyPreset = gemini.safetyPreset ?? 'balanced';
+    const safetyEnabled = Boolean(gemini.safetyPreset);
+    const systemPrompt = gemini.systemPrompt ?? '';
+    const streaming = gemini.streaming ?? true;
+    const timeoutSec = gemini.timeoutSec ?? 60;
+    const retryCount = gemini.retryCount ?? 2;
+
+    setGeminiEnabled(gemini.enabled);
+    setGeminiHasKey(gemini.hasSecret);
+    setGeminiKey(masked);
+    setGeminiKeyEditable(!gemini.hasSecret);
+    setGeminiModel(model);
+    setGeminiTemperature(temperature);
+    setGeminiMaxTokens(maxOutputTokens);
+    setGeminiSafetyPreset(safetyPreset);
+    setGeminiSafetyEnabled(safetyEnabled);
+    setGeminiSystemPrompt(systemPrompt);
+    setGeminiStreaming(streaming);
+    setGeminiTimeoutSec(timeoutSec);
+    setGeminiRetryCount(retryCount);
+
+    return {
+      enabled: gemini.enabled,
+      hasSecret: gemini.hasSecret,
+      masked,
+      model,
+      temperature,
+      maxOutputTokens,
+      safetyPreset,
+      safetyEnabled,
+      systemPrompt,
+      streaming,
+      timeoutSec,
+      retryCount,
+    };
+  };
+
   const handleIntegrationsSave = async () => {
     setSavingIntegrations(true);
     setError(null);
@@ -335,6 +577,9 @@ const SettingsPage = () => {
         stripeSecret && stripeSecret !== MASKED_VALUE ? stripeSecret : undefined;
       const geminiKeyValue =
         geminiKey && geminiKey !== MASKED_VALUE ? geminiKey : undefined;
+      const geminiSystemPromptValue = geminiSystemPrompt.trim()
+        ? geminiSystemPrompt
+        : undefined;
       const deviantClientIdValue =
         deviantClientId && deviantClientId !== MASKED_VALUE
           ? deviantClientId
@@ -347,20 +592,30 @@ const SettingsPage = () => {
       const stripe = await updateStripeSettings({
         enabled: stripeEnabled,
         secretKey: stripeSecretValue,
+        defaultCurrency: normalizeCurrency(stripeDefaultCurrency),
       });
       const stripeMasked = stripe.hasSecret ? MASKED_VALUE : '';
       setStripeEnabled(stripe.enabled);
       setStripeHasSecret(stripe.hasSecret);
       setStripeSecret(stripeMasked);
+      setStripeKeyEditable(!stripe.hasSecret);
+      setStripeDefaultCurrency(
+        normalizeCurrency(stripe.defaultCurrency ?? stripeDefaultCurrency),
+      );
 
       const gemini = await updateGeminiSettings({
         enabled: geminiEnabled,
         apiKey: geminiKeyValue,
+        model: geminiModel,
+        temperature: geminiTemperature,
+        maxOutputTokens: geminiMaxTokens,
+        safetyPreset: geminiSafetyEnabled ? geminiSafetyPreset : null,
+        systemPrompt: geminiSystemPromptValue,
+        streaming: geminiStreaming,
+        timeoutSec: geminiTimeoutSec,
+        retryCount: geminiRetryCount,
       });
-      const geminiMasked = gemini.hasSecret ? MASKED_VALUE : '';
-      setGeminiEnabled(gemini.enabled);
-      setGeminiHasKey(gemini.hasSecret);
-      setGeminiKey(geminiMasked);
+      const geminiState = applyGeminiSettings(gemini);
 
       const deviant = await updateDeviantArtSettings({
         enabled: deviantEnabled,
@@ -372,25 +627,55 @@ const SettingsPage = () => {
       setDeviantHasSecret(deviant.hasSecret);
       setDeviantClientId(deviantMasked);
       setDeviantClientSecret(deviantMasked);
+      setDeviantKeyEditable(!deviant.hasSecret);
+
+      if (creditAlertDirty) {
+        const updatedStudio = await updateStudioSettings({
+          creditAlertThreshold,
+        });
+        const nextThreshold =
+          updatedStudio.creditAlertThreshold ?? creditAlertThreshold;
+        setCreditAlertThreshold(nextThreshold);
+        setInitialStudio((prev) =>
+          prev ? { ...prev, creditAlertThreshold: nextThreshold } : prev,
+        );
+      }
+
       setInitialIntegrations({
         stripeEnabled: stripe.enabled,
         stripeSecret: stripeMasked,
-        geminiEnabled: gemini.enabled,
-        geminiKey: geminiMasked,
+        stripeDefaultCurrency: normalizeCurrency(
+          stripe.defaultCurrency ?? stripeDefaultCurrency,
+        ),
+        geminiEnabled: geminiState.enabled,
+        geminiKey: geminiState.masked,
+        geminiModel: geminiState.model,
+        geminiTemperature: geminiState.temperature,
+        geminiMaxTokens: geminiState.maxOutputTokens,
+        geminiSafetyEnabled: geminiState.safetyEnabled,
+        geminiSafetyPreset: geminiState.safetyPreset,
+        geminiSystemPrompt: geminiState.systemPrompt,
+        geminiStreaming: geminiState.streaming,
+        geminiTimeoutSec: geminiState.timeoutSec,
+        geminiRetryCount: geminiState.retryCount,
         deviantEnabled: deviant.enabled,
         deviantClientId: deviantMasked,
         deviantClientSecret: deviantMasked,
       });
 
       if (stripe.enabled && stripe.hasSecret) {
-        const balance = await fetchStripeBalance();
-        if (balance.enabled && balance.available !== undefined) {
-          const formatted = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: balance.currency ?? 'USD',
-          }).format(balance.available / 100);
-          setStripeBalance(formatted);
+        setStripeBalanceLoading(true);
+        try {
+          const balance = await fetchStripeBalance();
+          if (balance.enabled && balance.available !== undefined) {
+            setStripeBalanceAmount(balance.available);
+          }
+        } finally {
+          setStripeBalanceLoading(false);
         }
+      } else {
+        setStripeBalanceAmount(null);
+        setStripeBalanceLoading(false);
       }
       pushToast('success', 'Integrations updated successfully.');
     } catch (err) {
@@ -411,16 +696,23 @@ const SettingsPage = () => {
         email: studioEmail,
         studioName,
         timezone: studioTimezone,
+        numberFormatLocale,
+        creditAlertThreshold,
       });
       setStudioDisplayName(updated.displayName);
       setStudioEmail(updated.email);
       setStudioName(updated.studioName);
       setStudioTimezone(updated.timezone);
+      setNumberFormatLocale(updated.numberFormatLocale ?? numberFormatLocale);
+      setCreditAlertThreshold(updated.creditAlertThreshold ?? creditAlertThreshold);
       setInitialStudio({
         displayName: updated.displayName,
         email: updated.email,
         studioName: updated.studioName,
         timezone: updated.timezone,
+        numberFormatLocale: updated.numberFormatLocale ?? numberFormatLocale,
+        creditAlertThreshold:
+          updated.creditAlertThreshold ?? creditAlertThreshold,
       });
       pushToast('success', 'Studio settings saved.');
     } catch (err) {
@@ -483,10 +775,53 @@ const SettingsPage = () => {
     }
   };
 
+  const integrations = [
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      description: 'Billing & payouts',
+      enabled: stripeEnabled,
+      active: stripeActive,
+      onToggle: () => setStripeEnabled((prev) => !prev),
+      logo: <img src="/logo-stripe.svg" alt="Stripe" className="h-8 w-8" />,
+      logoBg: 'border border-slate-200 bg-white dark:border-border dark:bg-slate-900',
+      learnMore: 'https://stripe.com',
+    },
+    {
+      id: 'gemini',
+      name: 'Gemini',
+      description: 'AI story engine',
+      enabled: geminiEnabled,
+      active: geminiActive,
+      onToggle: () => setGeminiEnabled((prev) => !prev),
+      logo: <img src="/logo-gemini.svg" alt="Gemini" className="h-8 w-8" />,
+      logoBg: 'border border-slate-200 bg-white dark:border-border dark:bg-slate-900',
+      learnMore: 'https://ai.google.dev',
+    },
+    {
+      id: 'deviant',
+      name: 'DeviantArt',
+      description: 'Inspiration feed',
+      enabled: deviantEnabled,
+      active: deviantActive,
+      onToggle: () => setDeviantEnabled((prev) => !prev),
+      logo: (
+        <img src="/logo-deviantart.svg" alt="DeviantArt" className="h-8 w-8" />
+      ),
+      logoBg: 'border border-slate-200 bg-white dark:border-border dark:bg-slate-900',
+      learnMore: 'https://www.deviantart.com',
+    },
+  ];
+
   return (
     <DashboardLayout
       projectTitle="DreamWeaverComics Studio"
       credits={1240}
+      creditsLoading={loading}
+      creditAlertThreshold={creditAlertThreshold}
+      numberLocale={numberFormatLocale}
+      stripeBalance={stripeBalance}
+      stripeBalanceLoading={stripeBalanceLoading}
       activeNav="settings"
       onLogout={handleLogout}
       userName={userName}
@@ -553,7 +888,7 @@ const SettingsPage = () => {
         <div className="space-y-6">
           {activeSection === 'general' ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     General
@@ -591,7 +926,7 @@ const SettingsPage = () => {
                     value={studioDisplayName}
                     onChange={(event) => setStudioDisplayName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
                 <div>
@@ -603,7 +938,7 @@ const SettingsPage = () => {
                     value={studioEmail}
                     onChange={(event) => setStudioEmail(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
                 <div>
@@ -615,7 +950,7 @@ const SettingsPage = () => {
                     value={studioName}
                     onChange={(event) => setStudioName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
                 <div>
@@ -627,14 +962,37 @@ const SettingsPage = () => {
                     value={studioTimezone}
                     onChange={(event) => setStudioTimezone(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    Number format
+                  </label>
+                  <div className="relative mt-2">
+                    <select
+                      value={numberFormatLocale}
+                      onChange={(event) => setNumberFormatLocale(event.target.value)}
+                      disabled={studioDisabled}
+                      className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                    >
+                      {numberFormatOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-foreground/60">
+                    Controls thousand and decimal separators across the dashboard.
+                  </p>
                 </div>
               </div>
             </div>
           ) : activeSection === 'profile' ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     Profile
@@ -722,7 +1080,7 @@ const SettingsPage = () => {
                     value={profileDisplayName}
                     onChange={(event) => setProfileDisplayName(event.target.value)}
                     disabled={profileDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
                 <div>
@@ -734,23 +1092,23 @@ const SettingsPage = () => {
                     value={profileEmail}
                     onChange={(event) => setProfileEmail(event.target.value)}
                     disabled={profileDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
               </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-                    Integrations
+                    Integration
                   </p>
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-                    Plug &amp; play providers
+                    Integrations
                   </h3>
                   <p className="mt-2 text-xs text-slate-500 dark:text-foreground/60">
-                    Toggle providers on or off
+                    Supercharge your workflow using these integrations
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -775,169 +1133,560 @@ const SettingsPage = () => {
               {error ? (
                 <p className="mt-4 text-sm text-rose-500">{error}</p>
               ) : null}
-              <div className="mt-6 space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-border dark:bg-background">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-                        Stripe
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
-                        Billing &amp; payouts
-                      </p>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
-                        {stripeActive ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-slate-400" />
-                        )}
-                        <span>{stripeActive ? 'Active' : 'Inactive'}</span>
+              <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-border dark:border-border dark:bg-card">
+                {integrations.map((item) => (
+                  <div key={item.id} className="px-5 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.logoBg}`}
+                        >
+                          {item.logo}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-foreground/60">
+                            {item.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Toggle
-                      enabled={stripeEnabled}
-                      onChange={() => setStripeEnabled((prev) => !prev)}
-                      label="Enable Stripe integration"
-                      disabled={integrationsDisabled}
-                    />
-                  </div>
-                  {stripeEnabled ? (
-                    <div className="mt-4 space-y-3">
-                      <input
-                        type="password"
-                        placeholder="Enter secret key"
-                        value={stripeSecret}
-                        onChange={(event) => setStripeSecret(event.target.value)}
-                        onFocus={() => {
-                          if (stripeSecret === MASKED_VALUE) {
-                            setStripeSecret('');
-                          }
-                        }}
-                        disabled={integrationsDisabled}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
-                      />
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-foreground/60">
-                        <span>Available balance</span>
-                        <span className="font-semibold text-slate-900 dark:text-foreground">
-                          {stripeBalance}
+                      <div className="flex flex-wrap items-center gap-4">
+                        <a
+                          href={item.learnMore}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:text-foreground/60 dark:hover:text-foreground"
+                        >
+                          Learn more
+                        </a>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] ${
+                            item.active
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
+                              : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-border dark:bg-background dark:text-foreground/60'
+                          }`}
+                        >
+                          {item.active ? (
+                            <CheckCircle2 className="h-3 w-3" />
+                          ) : (
+                            <XCircle className="h-3 w-3" />
+                          )}
+                          {item.active ? 'Active' : 'Inactive'}
                         </span>
+                        <Toggle
+                          enabled={item.enabled}
+                          onChange={item.onToggle}
+                          label={`Enable ${item.name} integration`}
+                          disabled={integrationsDisabled}
+                        />
                       </div>
                     </div>
-                  ) : (
-                    <p className="mt-4 text-xs text-slate-500 dark:text-foreground/60">
-                      Enable Stripe to configure keys and view balance.
-                    </p>
-                  )}
-                </div>
+                    {item.id === 'stripe' && stripeEnabled ? (
+                      <div className="mt-4 space-y-4">
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
+                          <label
+                            htmlFor="stripe-secret-key"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Secret key
+                          </label>
+                          <div className="relative">
+                            <input
+                              id="stripe-secret-key"
+                              type="password"
+                              placeholder="Enter secret key"
+                              value={stripeSecret}
+                              onChange={(event) => setStripeSecret(event.target.value)}
+                              onFocus={() => {
+                                if (stripeSecret === MASKED_VALUE) {
+                                  setStripeSecret('');
+                                }
+                              }}
+                              disabled={
+                                integrationsDisabled ||
+                                (stripeHasSecret && !stripeKeyEditable)
+                              }
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            />
+                            {stripeHasSecret && !stripeKeyEditable ? (
+                              <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            ) : null}
+                          </div>
+                          <div className="self-center">
+                            {stripeHasSecret ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (stripeKeyEditable) {
+                                    setStripeKeyEditable(false);
+                                    setStripeSecret(MASKED_VALUE);
+                                    return;
+                                  }
+                                  setStripeKeyEditable(true);
+                                  if (stripeSecret === MASKED_VALUE) {
+                                    setStripeSecret('');
+                                  }
+                                }}
+                                disabled={integrationsDisabled}
+                                aria-label={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
+                                title={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                              >
+                                {stripeKeyEditable ? (
+                                  <X className="h-4 w-4" />
+                                ) : (
+                                  <PencilLine className="h-4 w-4" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="hidden h-10 w-10 md:inline-block" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Used to authenticate Stripe API calls. Keep it private.
+                          </p>
+                        </div>
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="stripe-default-currency"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Default currency
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="stripe-default-currency"
+                              value={stripeDefaultCurrency}
+                              onChange={(event) =>
+                                setStripeDefaultCurrency(event.target.value)
+                              }
+                              disabled={integrationsDisabled}
+                              className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            >
+                              {stripeCurrencyOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Used as the default for new prices and invoices.
+                          </p>
+                        </div>
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                          <span className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60">
+                            Available balance
+                          </span>
+                          <input
+                            type="text"
+                            value={stripeBalance}
+                            disabled
+                            readOnly
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-900 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                    {item.id === 'gemini' && geminiEnabled ? (
+                      <div className="mt-4 space-y-4">
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
+                          <label
+                            htmlFor="gemini-api-key"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            API key
+                          </label>
+                          <div className="relative">
+                            <input
+                              id="gemini-api-key"
+                              type="password"
+                              placeholder="Enter API key"
+                              value={geminiKey}
+                              onChange={(event) => setGeminiKey(event.target.value)}
+                              onFocus={() => {
+                                if (geminiKey === MASKED_VALUE) {
+                                  setGeminiKey('');
+                                }
+                              }}
+                              disabled={
+                                integrationsDisabled || (geminiHasKey && !geminiKeyEditable)
+                              }
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            />
+                            {geminiHasKey && !geminiKeyEditable ? (
+                              <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            ) : null}
+                          </div>
+                          <div className="self-center">
+                            {geminiHasKey ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (geminiKeyEditable) {
+                                    setGeminiKeyEditable(false);
+                                    setGeminiKey(MASKED_VALUE);
+                                    return;
+                                  }
+                                  setGeminiKeyEditable(true);
+                                  if (geminiKey === MASKED_VALUE) {
+                                    setGeminiKey('');
+                                  }
+                                }}
+                                disabled={integrationsDisabled}
+                                aria-label={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
+                                title={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                              >
+                                {geminiKeyEditable ? (
+                                  <X className="h-4 w-4" />
+                                ) : (
+                                  <PencilLine className="h-4 w-4" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="hidden h-10 w-10 md:inline-block" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Gemini API (AI Studio) key used to authenticate requests.
+                          </p>
+                        </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-5 dark:border-border dark:bg-card">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-                        Gemini
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
-                        AI Story Engine
-                      </p>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
-                        {geminiActive ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-slate-400" />
-                        )}
-                        <span>{geminiActive ? 'Active' : 'Inactive'}</span>
-                      </div>
-                    </div>
-                    <Toggle
-                      enabled={geminiEnabled}
-                      onChange={() => setGeminiEnabled((prev) => !prev)}
-                      label="Enable Gemini integration"
-                      disabled={integrationsDisabled}
-                    />
-                  </div>
-                  {geminiEnabled ? (
-                    <div className="mt-4 space-y-3">
-                      <input
-                        type="password"
-                        placeholder="Enter API key"
-                        value={geminiKey}
-                        onChange={(event) => setGeminiKey(event.target.value)}
-                        onFocus={() => {
-                          if (geminiKey === MASKED_VALUE) {
-                            setGeminiKey('');
-                          }
-                        }}
-                        disabled={integrationsDisabled}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
-                      />
-                    </div>
-                  ) : (
-                    <p className="mt-4 text-xs text-slate-500 dark:text-foreground/60">
-                      Enable Gemini to configure the API key.
-                    </p>
-                  )}
-                </div>
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-model"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Model
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="gemini-model"
+                              value={geminiModel}
+                              onChange={(event) => setGeminiModel(event.target.value)}
+                              disabled={integrationsDisabled}
+                              className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            >
+                              {geminiModelOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Select the Gemini model used for generation (preview models
+                            require Gemini API access).
+                          </p>
+                        </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-5 dark:border-border dark:bg-card">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-                        DeviantArt
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
-                        Inspiration feed
-                      </p>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
-                        {deviantActive ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-slate-400" />
-                        )}
-                        <span>{deviantActive ? 'Active' : 'Inactive'}</span>
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-temperature"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Temperature
+                          </label>
+                          <input
+                            id="gemini-temperature"
+                            type="number"
+                            min={0}
+                            max={2}
+                            step={0.1}
+                            value={geminiTemperature}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setGeminiTemperature(value === '' ? 0 : Number(value));
+                            }}
+                            disabled={integrationsDisabled}
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Higher values make output more creative (0–2).
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-max-tokens"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Max output tokens
+                          </label>
+                          <input
+                            id="gemini-max-tokens"
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={geminiMaxTokens}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setGeminiMaxTokens(value === '' ? 0 : Number(value));
+                            }}
+                            disabled={integrationsDisabled}
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Limits how long responses can be.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-safety"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Safety
+                          </label>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-3">
+                              <Toggle
+                                enabled={geminiSafetyEnabled}
+                                onChange={() =>
+                                  setGeminiSafetyEnabled((prev) => !prev)
+                                }
+                                label="Enable Gemini safety"
+                                disabled={integrationsDisabled}
+                              />
+                              <span className="text-xs text-slate-500 dark:text-foreground/60">
+                                {geminiSafetyEnabled ? 'On' : 'Off'}
+                              </span>
+                            </div>
+                            <div className="relative min-w-[220px] flex-1">
+                              <select
+                                id="gemini-safety"
+                                value={geminiSafetyPreset}
+                                onChange={(event) => {
+                                  const value = event.target.value as
+                                    | 'strict'
+                                    | 'balanced'
+                                    | 'relaxed';
+                                  setGeminiSafetyPreset(value);
+                                  setGeminiSafetyEnabled(true);
+                                }}
+                                disabled={integrationsDisabled || !geminiSafetyEnabled}
+                                className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              >
+                                {GEMINI_SAFETY_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Disable to avoid sending any safety settings. Preset
+                            controls filtering thresholds.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-system-prompt"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            System prompt
+                          </label>
+                          <textarea
+                            id="gemini-system-prompt"
+                            rows={3}
+                            placeholder="Add a default style or instruction for Gemini"
+                            value={geminiSystemPrompt}
+                            onChange={(event) => setGeminiSystemPrompt(event.target.value)}
+                            disabled={integrationsDisabled}
+                            className="min-h-[96px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Applied to every request as a base instruction.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                          <span className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60">
+                            Streaming
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <Toggle
+                              enabled={geminiStreaming}
+                              onChange={() => setGeminiStreaming((prev) => !prev)}
+                              label="Enable Gemini streaming"
+                              disabled={integrationsDisabled}
+                            />
+                            <span className="text-xs text-slate-500 dark:text-foreground/60">
+                              {geminiStreaming ? 'On' : 'Off'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Stream tokens as they are generated.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-timeout"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Timeout (sec)
+                          </label>
+                          <input
+                            id="gemini-timeout"
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={geminiTimeoutSec}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setGeminiTimeoutSec(value === '' ? 0 : Number(value));
+                            }}
+                            disabled={integrationsDisabled}
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Maximum time to wait for a response.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-retry"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Retry count
+                          </label>
+                          <input
+                            id="gemini-retry"
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={geminiRetryCount}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setGeminiRetryCount(value === '' ? 0 : Number(value));
+                            }}
+                            disabled={integrationsDisabled}
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Number of automatic retries on failure.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
+                          <label
+                            htmlFor="gemini-credit-alert"
+                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                          >
+                            Credits alert threshold
+                          </label>
+                          <input
+                            id="gemini-credit-alert"
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={creditAlertThreshold}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setCreditAlertThreshold(value === '' ? 0 : Number(value));
+                            }}
+                            disabled={integrationsDisabled}
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
+                            Sends a bell notification when credits fall below this
+                            value.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Toggle
-                      enabled={deviantEnabled}
-                      onChange={() => setDeviantEnabled((prev) => !prev)}
-                      label="Enable DeviantArt integration"
-                      disabled={integrationsDisabled}
-                    />
+                    ) : null}
+                    {item.id === 'deviant' && deviantEnabled ? (
+                      <div className="mt-4 space-y-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              placeholder="Enter client ID"
+                              value={deviantClientId}
+                              onChange={(event) => setDeviantClientId(event.target.value)}
+                              onFocus={() => {
+                                if (deviantClientId === MASKED_VALUE) {
+                                  setDeviantClientId('');
+                                }
+                              }}
+                              disabled={
+                                integrationsDisabled ||
+                                (deviantHasSecret && !deviantKeyEditable)
+                              }
+                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            />
+                            {deviantHasSecret && !deviantKeyEditable ? (
+                              <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            ) : null}
+                          </div>
+                          {deviantHasSecret ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (deviantKeyEditable) {
+                                  setDeviantKeyEditable(false);
+                                  setDeviantClientId(MASKED_VALUE);
+                                  setDeviantClientSecret(MASKED_VALUE);
+                                  return;
+                                }
+                                setDeviantKeyEditable(true);
+                                if (deviantClientId === MASKED_VALUE) {
+                                  setDeviantClientId('');
+                                }
+                                if (deviantClientSecret === MASKED_VALUE) {
+                                  setDeviantClientSecret('');
+                                }
+                              }}
+                              disabled={integrationsDisabled}
+                              aria-label={
+                                deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'
+                              }
+                              title={deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'}
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                            >
+                              {deviantKeyEditable ? (
+                                <X className="h-4 w-4" />
+                              ) : (
+                                <PencilLine className="h-4 w-4" />
+                              )}
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="password"
+                            placeholder="Enter client secret"
+                            value={deviantClientSecret}
+                            onChange={(event) => setDeviantClientSecret(event.target.value)}
+                            onFocus={() => {
+                              if (deviantClientSecret === MASKED_VALUE) {
+                                setDeviantClientSecret('');
+                              }
+                            }}
+                            disabled={
+                              integrationsDisabled ||
+                              (deviantHasSecret && !deviantKeyEditable)
+                            }
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                          />
+                          {deviantHasSecret && !deviantKeyEditable ? (
+                            <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                  {deviantEnabled ? (
-                    <div className="mt-4 space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Enter client ID"
-                        value={deviantClientId}
-                        onChange={(event) => setDeviantClientId(event.target.value)}
-                        onFocus={() => {
-                          if (deviantClientId === MASKED_VALUE) {
-                            setDeviantClientId('');
-                          }
-                        }}
-                        disabled={integrationsDisabled}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
-                      />
-                      <input
-                        type="password"
-                        placeholder="Enter client secret"
-                        value={deviantClientSecret}
-                        onChange={(event) => setDeviantClientSecret(event.target.value)}
-                        onFocus={() => {
-                          if (deviantClientSecret === MASKED_VALUE) {
-                            setDeviantClientSecret('');
-                          }
-                        }}
-                        disabled={integrationsDisabled}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
-                      />
-                    </div>
-                  ) : (
-                    <p className="mt-4 text-xs text-slate-500 dark:text-foreground/60">
-                      Enable DeviantArt to configure credentials.
-                    </p>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
           )}

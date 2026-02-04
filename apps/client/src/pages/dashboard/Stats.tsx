@@ -3,46 +3,19 @@ import {
   BookOpen,
   Coins,
   Layers,
-  Sparkles,
   ChevronDown,
 } from 'lucide-react';
 import { fetchStripeBalance } from '@dreamweaverstudio/client-data-access-api';
+import { formatCurrency, formatNumber } from '../../utils/currency';
 
-const stats = [
-  {
-    label: 'Stripe balance',
-    value: '$42,180',
-    delta: '+12% vs last month',
-    icon: Coins,
-    tone: 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-200',
-  },
-  {
-    label: 'Published comics',
-    value: '38',
-    delta: '+4 this month',
-    icon: BookOpen,
-    tone: 'bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-200',
-  },
-  {
-    label: 'Active projects',
-    value: '7',
-    delta: '+2 in review',
-    icon: Layers,
-    tone:
-      'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200',
-  },
-  {
-    label: 'Render success rate',
-    value: '97.4%',
-    delta: '+1.2% vs last month',
-    icon: Sparkles,
-    tone: 'bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-200',
-  },
-];
+type StatsProps = {
+  currency?: string;
+  locale?: string;
+};
 
-const Stats = () => {
-  const [stripeValue, setStripeValue] = useState(stats[0].value);
-  const [stripeDelta, setStripeDelta] = useState(stats[0].delta);
+const Stats = ({ currency = 'USD', locale = 'en-US' }: StatsProps) => {
+  const [stripeAmount, setStripeAmount] = useState(42180);
+  const [stripeDelta, setStripeDelta] = useState('+12% vs last month');
 
   useEffect(() => {
     let mounted = true;
@@ -52,11 +25,7 @@ const Stats = () => {
         if (!mounted || !balance.enabled || balance.available === undefined) {
           return;
         }
-        const formatted = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: balance.currency ?? 'USD',
-        }).format(balance.available / 100);
-        setStripeValue(formatted);
+        setStripeAmount(balance.available / 100);
         setStripeDelta('Live balance');
       } catch (err) {
         // keep placeholder values
@@ -69,9 +38,28 @@ const Stats = () => {
   }, []);
 
   const cards = [
-    { ...stats[0], value: stripeValue, delta: stripeDelta },
-    stats[1],
-    stats[2],
+    {
+      label: 'Stripe balance',
+      value: formatCurrency(stripeAmount, currency, {}, locale),
+      delta: stripeDelta,
+      icon: Coins,
+      tone: 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-200',
+    },
+    {
+      label: 'Published comics',
+      value: formatNumber(38, locale),
+      delta: '+4 this month',
+      icon: BookOpen,
+      tone: 'bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-200',
+    },
+    {
+      label: 'Active projects',
+      value: formatNumber(7, locale),
+      delta: '+2 in review',
+      icon: Layers,
+      tone:
+        'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200',
+    },
   ];
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">

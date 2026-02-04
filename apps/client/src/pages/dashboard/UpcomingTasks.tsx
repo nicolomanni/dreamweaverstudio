@@ -1,4 +1,16 @@
-const UpcomingTasks = () => {
+import { formatCurrencyCompact, formatNumber } from '../../utils/currency';
+
+type UpcomingTasksProps = {
+  currency?: string;
+  locale?: string;
+};
+
+const UpcomingTasks = ({ currency = 'USD', locale = 'en-US' }: UpcomingTasksProps) => {
+  const currentAmount = 58400;
+  const targetAmount = 78000;
+  const progressPercent = 75;
+  const growthPercent = 12;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
@@ -11,15 +23,16 @@ const UpcomingTasks = () => {
       </div>
       <div className="mt-6 flex items-center gap-4">
         <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-slate-200 text-sm font-semibold text-slate-700 dark:border-border dark:text-foreground">
-          75%
+          {formatNumber(progressPercent, locale)}%
           <span className="absolute inset-1 rounded-full border-4 border-primary/40" />
         </div>
         <div>
           <p className="text-2xl font-semibold text-slate-900 dark:text-foreground">
-            $58.4k
+            {formatCurrencyCompact(currentAmount, currency, locale)}
           </p>
           <p className="text-xs text-slate-500 dark:text-foreground/60">
-            Target $78k • +12% this month
+            Target {formatCurrencyCompact(targetAmount, currency, locale)} • +
+            {formatNumber(growthPercent, locale)}% this month
           </p>
         </div>
       </div>

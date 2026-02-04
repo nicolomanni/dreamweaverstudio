@@ -1,22 +1,29 @@
-const RecentProjects = () => {
+import { formatCurrencyCompact } from '../../utils/currency';
+
+type RecentProjectsProps = {
+  currency?: string;
+  locale?: string;
+};
+
+const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsProps) => {
   const projectRows = [
     {
       name: 'Neon City Chronicles',
       status: 'Published',
       panels: 28,
-      revenue: '$4.2k',
+      revenue: 4200,
     },
     {
       name: 'Glass District Noir',
       status: 'Review',
       panels: 12,
-      revenue: '$2.1k',
+      revenue: 2100,
     },
     {
       name: 'Aetherline Prologue',
       status: 'Production',
       panels: 6,
-      revenue: '$640',
+      revenue: 640,
     },
   ];
   return (
@@ -79,7 +86,7 @@ const RecentProjects = () => {
                   {row.name.split(' ')[0]} Studio
                 </td>
                 <td className="px-4 py-4 text-right text-slate-600 dark:text-foreground/70">
-                  {row.revenue}
+                  {formatCurrencyCompact(row.revenue, currency, locale)}
                 </td>
               </tr>
             ))}

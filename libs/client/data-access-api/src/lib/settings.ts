@@ -38,6 +38,8 @@ export type StudioSettingsPayload = {
   email: string;
   studioName: string;
   timezone: string;
+  creditAlertThreshold?: number;
+  numberFormatLocale?: string;
 };
 
 export type UserProfilePayload = {

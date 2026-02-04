@@ -1,10 +1,16 @@
-const RenderPerformance = () => {
+import { formatNumber } from '../../utils/currency';
+
+type RenderPerformanceProps = {
+  locale?: string;
+};
+
+const RenderPerformance = ({ locale = 'en-US' }: RenderPerformanceProps) => {
   const countries = [
-    { name: 'United States', value: '38.6%' },
-    { name: 'Brazil', value: '27.9%' },
-    { name: 'Japan', value: '22.4%' },
-    { name: 'United Kingdom', value: '17.8%' },
-    { name: 'Turkey', value: '12.4%' },
+    { name: 'United States', value: 38.6 },
+    { name: 'Brazil', value: 27.9 },
+    { name: 'Japan', value: 22.4 },
+    { name: 'United Kingdom', value: 17.8 },
+    { name: 'Turkey', value: 12.4 },
   ];
 
   return (
@@ -25,7 +31,10 @@ const RenderPerformance = () => {
                 {country.name}
               </span>
               <span className="text-sm font-semibold text-slate-900 dark:text-foreground">
-                {country.value}
+                {formatNumber(country.value, locale, {
+                  maximumFractionDigits: 1,
+                })}
+                %
               </span>
             </div>
           ))}

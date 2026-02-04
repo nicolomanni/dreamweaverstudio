@@ -1,4 +1,17 @@
-const RecentActivity = () => {
+import { formatCurrency, formatNumber } from '../../utils/currency';
+
+type RecentActivityProps = {
+  currency?: string;
+  locale?: string;
+};
+
+const RecentActivity = ({
+  currency = 'USD',
+  locale = 'en-US',
+}: RecentActivityProps) => {
+  const stripePayout = formatCurrency(8450, currency, {}, locale);
+  const creditsTopUp = formatNumber(1200, locale);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
@@ -17,7 +30,7 @@ const RecentActivity = () => {
       <div className="mt-6 space-y-4">
         {[
           {
-            item: 'Stripe payout scheduled for $8,450.',
+            item: `Stripe payout scheduled for ${stripePayout}.`,
             time: '38m ago',
           },
           {
@@ -29,7 +42,7 @@ const RecentActivity = () => {
             time: '2h ago',
           },
           {
-            item: 'AI credits replenished (+1,200).',
+            item: `AI credits replenished (+${creditsTopUp}).`,
             time: '3h ago',
           },
         ].map((entry, index) => (

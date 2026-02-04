@@ -8,6 +8,8 @@ const StudioSettingsSchema = new Schema<StudioSettings>(
     email: { type: String, required: true },
     studioName: { type: String, required: true },
     timezone: { type: String, required: true },
+    creditAlertThreshold: { type: Number },
+    numberFormatLocale: { type: String, default: 'en-US' },
   },
   { timestamps: true, collection: 'studio_settings' },
 );
