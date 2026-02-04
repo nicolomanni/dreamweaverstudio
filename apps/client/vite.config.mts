@@ -1,10 +1,16 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import tailwindcss from '@tailwindcss/vite';
 import autoprefixer from 'autoprefixer';
+
+const pkg = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, '../../package.json'), 'utf8'),
+) as { version?: string };
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -18,6 +24,9 @@ export default defineConfig(() => ({
     host: 'localhost',
   },
   plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version ?? '0.0.0'),
+  },
   // Uncomment this if you are using workers.
   // worker: {
   //   plugins: () => [ nxViteTsPaths() ],

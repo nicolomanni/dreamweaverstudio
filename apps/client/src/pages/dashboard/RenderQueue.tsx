@@ -1,33 +1,39 @@
 const RenderQueue = () => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-      <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-        Campaign performance
-      </p>
-      <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-        Current Jobs
-      </h3>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
+            Top product
+          </p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
+            Best performing issues
+          </h3>
+        </div>
+        <button
+          type="button"
+          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 dark:hover:bg-card/80"
+        >
+          View all
+        </button>
+      </div>
       <div className="mt-5 space-y-4">
         {[
-          { title: 'Panel 12 · Neon Alley', progress: '80%' },
-          { title: 'Panel 13 · Rain Cut', progress: '45%' },
-          { title: 'Cover Draft · Alt B', progress: '15%' },
+          { title: 'Neon City Chronicles #6', change: '+12.6%' },
+          { title: 'Glass District Noir #2', change: '+8.4%' },
+          { title: 'Aetherline Prologue', change: '+4.1%' },
+          { title: 'Pulse Neon Poster', change: '+2.7%' },
         ].map((job, index) => (
-          <div key={`${job.title}-${index}`} className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-700 dark:text-foreground/80">
+          <div key={`${job.title}-${index}`} className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl border border-slate-200 bg-slate-50 dark:border-border dark:bg-background" />
+              <span className="text-sm font-medium text-slate-700 dark:text-foreground/80">
                 {job.title}
               </span>
-              <span className="text-xs text-slate-500 dark:text-foreground/50">
-                {job.progress}
-              </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-background">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: job.progress }}
-              />
-            </div>
+            <span className="text-xs font-semibold text-emerald-500">
+              {job.change}
+            </span>
           </div>
         ))}
       </div>

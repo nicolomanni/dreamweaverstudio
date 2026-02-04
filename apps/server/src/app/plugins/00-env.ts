@@ -12,6 +12,9 @@ const schema = {
     CORS_ORIGIN: { type: 'string', default: '' },
     GEMINI_API_KEY: { type: 'string' },
     STRIPE_SECRET: { type: 'string' },
+    FIREBASE_PROJECT_ID: { type: 'string' },
+    FIREBASE_CLIENT_EMAIL: { type: 'string' },
+    FIREBASE_PRIVATE_KEY: { type: 'string' },
   },
 };
 

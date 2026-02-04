@@ -1,38 +1,37 @@
-import { useState } from 'react';
-
 const RenderPerformance = () => {
-  const [active, setActive] = useState<'all' | 'campaign' | 'email'>('all');
+  const countries = [
+    { name: 'United States', value: '38.6%' },
+    { name: 'Brazil', value: '27.9%' },
+    { name: 'Japan', value: '22.4%' },
+    { name: 'United Kingdom', value: '17.8%' },
+    { name: 'Turkey', value: '12.4%' },
+  ];
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
-          Ads performance
+          Top regions
         </h3>
-        <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1 text-xs font-semibold text-slate-600 dark:bg-background dark:text-foreground/70">
-          {[
-            { id: 'all', label: 'All' },
-            { id: 'campaign', label: 'Campaign' },
-            { id: 'email', label: 'Email' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActive(tab.id as typeof active)}
-              className={`rounded-full px-3 py-1 ${
-                active === tab.id
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-card dark:text-foreground'
-                  : 'text-slate-500 dark:text-foreground/60'
-              }`}
-            >
-              {tab.label}
-            </button>
+      </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="flex h-56 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 dark:border-border dark:bg-background">
+          <div className="h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.18),transparent_70%)]" />
+        </div>
+        <div className="space-y-4">
+          {countries.map((country) => (
+            <div key={country.name} className="flex items-center justify-between">
+              <span className="text-sm text-slate-700 dark:text-foreground/80">
+                {country.name}
+              </span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-foreground">
+                {country.value}
+              </span>
+            </div>
           ))}
         </div>
       </div>
-      <div className="mt-6 h-64 rounded-2xl border border-slate-200 bg-slate-50 dark:border-border dark:bg-background">
-        <div className="h-full w-full rounded-2xl bg-[linear-gradient(120deg,rgba(34,211,238,0.12),rgba(124,92,255,0.08))]" />
-      </div>
-    </div>
+    </section>
   );
 };
 

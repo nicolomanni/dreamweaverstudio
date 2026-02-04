@@ -6,27 +6,27 @@ const Welcome = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-foreground/60">
-            Welcome Back
+            Studio Overview
           </p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-foreground">
-            Neon City Chronicles
+            DreamWeaverComics
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-foreground/70">
-            AI render flow is stable. Next scene queued for ink pass and
-            lighting refinement.
+            Production is on track. New client briefs are approved and the
+            next release window is ready for QA.
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-black shadow-sm transition-colors duration-200 hover:bg-primary/90">
+        <button className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition-colors duration-200 hover:bg-primary/90">
           <PlayCircle className="h-4 w-4" />
-          Preview
+          Studio HQ
         </button>
       </div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {[
-          { label: 'Draft Panels', value: '12', delta: '+2' },
-          { label: 'Queued Renders', value: '4', delta: '+1' },
-          { label: 'Scenes', value: '3', delta: '+1' },
-          { label: 'Characters', value: '8', delta: '+3' },
+          { label: 'Active briefs', value: '9', delta: '+2' },
+          { label: 'Panels rendered today', value: '42', delta: '+6' },
+          { label: 'Comics in review', value: '5', delta: '+1' },
+          { label: 'Avg turnaround', value: '2.6d', delta: '-0.4d' },
         ].map((stat) => (
           <div
             key={stat.label}

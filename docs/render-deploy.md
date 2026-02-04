@@ -28,6 +28,8 @@ Service type: Static Site
 - Build: `npm ci --include=dev && npx nx build client`
 - Publish dir: `dist/apps/client`
 - Redirects: rewrite `/*` to `/index.html`
+- Env vars (Static site):
+  - `VITE_API_BASE_URL` (URL of the backend, e.g. `https://dreamweaver-server.onrender.com`)
 
 ## Notes
 - Render will inject `PORT` automatically for the web service.

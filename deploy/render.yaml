@@ -16,11 +16,22 @@ services:
         sync: false
       - key: STRIPE_SECRET
         sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
   - type: static
     name: dreamweaver-client
     env: static
     buildCommand: npm ci --include=dev && npx nx build client
     staticPublishPath: dist/apps/client
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
     routes:
       - type: rewrite
         source: /*

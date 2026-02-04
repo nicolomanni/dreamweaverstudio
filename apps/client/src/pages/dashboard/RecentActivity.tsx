@@ -17,20 +17,20 @@ const RecentActivity = () => {
       <div className="mt-6 space-y-4">
         {[
           {
-            item: 'Generated 4 panels for “Rain District Alley”.',
+            item: 'Stripe payout scheduled for $8,450.',
+            time: '38m ago',
+          },
+          {
+            item: 'Published “Neon City Chronicles · Issue 6”.',
             time: '1h ago',
           },
           {
-            item: 'Uploaded 3 concept references to Gallery.',
+            item: 'Client brief approved for “Glass District Noir”.',
             time: '2h ago',
           },
           {
-            item: 'Refined lighting prompts for Scene 02.',
+            item: 'AI credits replenished (+1,200).',
             time: '3h ago',
-          },
-          {
-            item: 'Exported storyboard draft to PDF.',
-            time: '4h ago',
           },
         ].map((entry, index) => (
           <div

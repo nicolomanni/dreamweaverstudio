@@ -2,21 +2,21 @@ const RecentProjects = () => {
   const projectRows = [
     {
       name: 'Neon City Chronicles',
-      status: 'In Progress',
+      status: 'Published',
       panels: 28,
-      updated: '2h ago',
+      revenue: '$4.2k',
     },
     {
       name: 'Glass District Noir',
       status: 'Review',
       panels: 12,
-      updated: 'Yesterday',
+      revenue: '$2.1k',
     },
     {
       name: 'Aetherline Prologue',
-      status: 'Draft',
+      status: 'Production',
       panels: 6,
-      updated: '3 days ago',
+      revenue: '$640',
     },
   ];
   return (
@@ -24,10 +24,10 @@ const RecentProjects = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-            Recent Projects
+            Recent orders
           </p>
           <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-            Latest Activity
+            Client billing activity
           </h3>
         </div>
         <button
@@ -38,13 +38,14 @@ const RecentProjects = () => {
         </button>
       </div>
       <div className="mt-6 overflow-x-auto">
-        <table className="min-w-[680px] w-full text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
             <tr>
-              <th className="px-4 py-3">Project</th>
+              <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Panels</th>
-              <th className="px-4 py-3">Updated</th>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Customer</th>
+              <th className="px-4 py-3 text-right">Amount</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-border">
@@ -61,7 +62,7 @@ const RecentProjects = () => {
                         {row.name}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-foreground/50">
-                        3 scenes · 2 characters
+                        Order #DW-00{row.panels}
                       </p>
                     </div>
                   </div>
@@ -72,10 +73,13 @@ const RecentProjects = () => {
                   </span>
                 </td>
                 <td className="px-4 py-4 text-slate-600 dark:text-foreground/70">
-                  {row.panels}
+                  09/02/2026
                 </td>
                 <td className="px-4 py-4 text-slate-600 dark:text-foreground/70">
-                  {row.updated}
+                  {row.name.split(' ')[0]} Studio
+                </td>
+                <td className="px-4 py-4 text-right text-slate-600 dark:text-foreground/70">
+                  {row.revenue}
                 </td>
               </tr>
             ))}

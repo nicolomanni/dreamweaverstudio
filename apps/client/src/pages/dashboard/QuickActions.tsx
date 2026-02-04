@@ -1,27 +1,36 @@
 const QuickActions = () => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-      <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-foreground/60">
-        Quick Actions
-      </p>
-      <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
+            Channel revenue
+          </p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
+            Distribution split
+          </h3>
+        </div>
+        <span className="text-xs font-semibold text-slate-500 dark:text-foreground/60">
+          Monthly
+        </span>
+      </div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
         {[
-          { title: 'Generate Panels', detail: 'Launch batch render' },
-          { title: 'Refine Prompts', detail: 'Adjust tone + lighting' },
-          { title: 'Export PDF', detail: 'Prepare for review' },
-        ].map((action) => (
-          <button
-            key={action.title}
-            type="button"
-            className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-colors duration-200 hover:bg-white dark:border-border dark:bg-background dark:hover:bg-card/80"
+          { label: 'Direct sales', value: '$9.2k' },
+          { label: 'Marketplace', value: '$6.4k' },
+          { label: 'Licensing', value: '$4.8k' },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-border dark:bg-background"
           >
-            <span className="text-sm font-semibold text-slate-900 dark:text-foreground">
-              {action.title}
-            </span>
-            <span className="text-xs text-slate-500 dark:text-foreground/60">
-              {action.detail}
-            </span>
-          </button>
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+              {item.label}
+            </p>
+            <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
+              {item.value}
+            </p>
+          </div>
         ))}
       </div>
     </div>

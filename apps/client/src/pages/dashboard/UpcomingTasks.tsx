@@ -1,41 +1,27 @@
-const scores = [
-  { label: 'Lead Volume', value: 78, tone: 'bg-emerald-500' },
-  { label: 'Conversion Rate', value: 57, tone: 'bg-amber-500' },
-  { label: 'Cost per Lead', value: 32, tone: 'bg-rose-500' },
-  { label: 'Engagement', value: 66, tone: 'bg-sky-500' },
-];
-
 const UpcomingTasks = () => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
-        Lead performance score
-      </h3>
-      <div className="mt-6 flex items-center justify-center">
-        <div className="h-40 w-40 rounded-full border border-dashed border-slate-200 bg-slate-50 dark:border-border dark:bg-background" />
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
+          Sales target
+        </h3>
+        <span className="text-xs font-semibold text-slate-500 dark:text-foreground/60">
+          Monthly
+        </span>
       </div>
-      <div className="mt-6 space-y-4">
-        {scores.map((score) => (
-          <div key={score.label} className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-slate-600 dark:border-border dark:text-foreground/70">
-              {score.label[0]}
-            </span>
-            <div className="flex-1">
-              <p className="text-sm text-slate-600 dark:text-foreground/70">
-                {score.label}
-              </p>
-              <div className="mt-2 h-2 rounded-full bg-slate-100 dark:bg-background">
-                <div
-                  className={`h-2 rounded-full ${score.tone}`}
-                  style={{ width: `${score.value}%` }}
-                />
-              </div>
-            </div>
-            <span className="text-sm font-semibold text-slate-700 dark:text-foreground">
-              {score.value}%
-            </span>
-          </div>
-        ))}
+      <div className="mt-6 flex items-center gap-4">
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-slate-200 text-sm font-semibold text-slate-700 dark:border-border dark:text-foreground">
+          75%
+          <span className="absolute inset-1 rounded-full border-4 border-primary/40" />
+        </div>
+        <div>
+          <p className="text-2xl font-semibold text-slate-900 dark:text-foreground">
+            $58.4k
+          </p>
+          <p className="text-xs text-slate-500 dark:text-foreground/60">
+            Target $78k • +12% this month
+          </p>
+        </div>
       </div>
     </div>
   );
