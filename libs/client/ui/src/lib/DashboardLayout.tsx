@@ -355,7 +355,7 @@ export function DashboardLayout({
                     <Search className="h-4 w-4" />
                     <input
                       type="search"
-                      placeholder="Search projects, prompts..."
+                      placeholder="Search..."
                       className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-foreground dark:placeholder:text-foreground/40"
                     />
                   </div>

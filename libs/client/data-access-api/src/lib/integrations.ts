@@ -1,6 +1,7 @@
 import { getAuth } from 'firebase/auth';
 import { firebaseApp } from './firebase';
 import { getApiBaseUrl } from './runtime-config';
+import { request } from './http';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -48,7 +49,7 @@ export type StripeBalanceResponse = {
 
 export async function fetchIntegrationSettings(): Promise<IntegrationSettingsResponse> {
   const headers = await getAuthHeader();
-  const response = await fetch(buildUrl('/integrations'), { headers });
+  const response = await request(buildUrl('/integrations'), { headers });
   return parseJson(response, 'Failed to load integration settings');
 }
 
@@ -61,7 +62,7 @@ export async function updateStripeSettings(payload: {
     'Content-Type': 'application/json',
     ...(await getAuthHeader()),
   };
-  const response = await fetch(buildUrl('/integrations/stripe'), {
+  const response = await request(buildUrl('/integrations/stripe'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
@@ -81,7 +82,7 @@ export async function updateGeminiSettings(payload: {
     'Content-Type': 'application/json',
     ...(await getAuthHeader()),
   };
-  const response = await fetch(buildUrl('/integrations/gemini'), {
+  const response = await request(buildUrl('/integrations/gemini'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
@@ -102,7 +103,7 @@ export async function updateDeviantArtSettings(payload: {
     'Content-Type': 'application/json',
     ...(await getAuthHeader()),
   };
-  const response = await fetch(buildUrl('/integrations/deviantart'), {
+  const response = await request(buildUrl('/integrations/deviantart'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
@@ -115,6 +116,6 @@ export async function updateDeviantArtSettings(payload: {
 
 export async function fetchStripeBalance(): Promise<StripeBalanceResponse> {
   const headers = await getAuthHeader();
-  const response = await fetch(buildUrl('/integrations/stripe/balance'), { headers });
+  const response = await request(buildUrl('/integrations/stripe/balance'), { headers });
   return parseJson(response, 'Failed to load Stripe balance');
 }

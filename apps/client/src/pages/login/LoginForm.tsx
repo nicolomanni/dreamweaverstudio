@@ -78,8 +78,9 @@ const LoginForm: React.FC = () => {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            disabled={isSubmitting}
             className="w-full rounded-lg border border-input bg-card/90 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-            placeholder="you@dreamweaver.studio"
+            placeholder="name@example.com"
           />
         </div>
         <div className="space-y-2">
@@ -96,6 +97,7 @@ const LoginForm: React.FC = () => {
             onChange={(event) => setPassword(event.target.value)}
             className="w-full rounded-lg border border-input bg-card/90 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
             placeholder="••••••••"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -107,6 +109,7 @@ const LoginForm: React.FC = () => {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={isSubmitting}
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label

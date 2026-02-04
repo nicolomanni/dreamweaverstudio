@@ -1,6 +1,7 @@
 import { getAuth } from 'firebase/auth';
 import { firebaseApp } from './firebase';
 import { getApiBaseUrl } from './runtime-config';
+import { request } from './http';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -47,7 +48,7 @@ export type UserProfilePayload = {
 
 export async function fetchStudioSettings(): Promise<StudioSettingsPayload> {
   const headers = await getAuthHeader();
-  const response = await fetch(buildUrl('/settings/general'), { headers });
+  const response = await request(buildUrl('/settings/general'), { headers });
   return parseJson(response, 'Failed to load studio settings');
 }
 
@@ -58,7 +59,7 @@ export async function updateStudioSettings(
     'Content-Type': 'application/json',
     ...(await getAuthHeader()),
   };
-  const response = await fetch(buildUrl('/settings/general'), {
+  const response = await request(buildUrl('/settings/general'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
@@ -68,7 +69,7 @@ export async function updateStudioSettings(
 
 export async function fetchUserProfile(): Promise<UserProfilePayload | null> {
   const headers = await getAuthHeader();
-  const response = await fetch(buildUrl('/settings/profile'), { headers });
+  const response = await request(buildUrl('/settings/profile'), { headers });
   return parseJson(response, 'Failed to load user profile');
 }
 
@@ -79,7 +80,7 @@ export async function updateUserProfile(
     'Content-Type': 'application/json',
     ...(await getAuthHeader()),
   };
-  const response = await fetch(buildUrl('/settings/profile'), {
+  const response = await request(buildUrl('/settings/profile'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),

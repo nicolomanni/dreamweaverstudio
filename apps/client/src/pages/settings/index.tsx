@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@dreamweaverstudio/client-ui';
 import {
   fetchIntegrationSettings,
@@ -14,7 +14,13 @@ import {
 } from '@dreamweaverstudio/client-data-access-api';
 import { onAuthChange, signOutUser } from '../../auth';
 import { useNavigate } from '@tanstack/react-router';
-import { SlidersHorizontal, User, Zap } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  SlidersHorizontal,
+  User,
+  Zap,
+} from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 
@@ -22,19 +28,22 @@ const Toggle = ({
   enabled,
   onChange,
   label,
+  disabled = false,
 }: {
   enabled: boolean;
   onChange: () => void;
   label: string;
+  disabled?: boolean;
 }) => (
   <button
     type="button"
     role="switch"
     aria-checked={enabled}
+    disabled={disabled}
     onClick={onChange}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-black ${
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-black ${
       enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
-    }`}
+    } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
   >
     <span className="sr-only">{label}</span>
     <span
@@ -44,7 +53,15 @@ const Toggle = ({
       }`}
     />
   </button>
-);
+  );
+
+const UnsavedBadge = ({ show }: { show: boolean }) =>
+  show ? (
+    <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-600 dark:text-amber-400">
+      <span className="h-2 w-2 rounded-full bg-amber-500" />
+      Unsaved
+    </span>
+  ) : null;
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -55,7 +72,6 @@ const SettingsPage = () => {
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeHasSecret, setStripeHasSecret] = useState(false);
-  const [stripeLast4, setStripeLast4] = useState<string | undefined>();
   const [stripeBalance, setStripeBalance] = useState<string>('—');
   const [geminiEnabled, setGeminiEnabled] = useState(false);
   const [geminiKey, setGeminiKey] = useState('');
@@ -78,6 +94,26 @@ const SettingsPage = () => {
   const [toasts, setToasts] = useState<
     { id: number; type: 'success' | 'error'; message: string }[]
   >([]);
+  const [initialStudio, setInitialStudio] = useState<{
+    displayName: string;
+    email: string;
+    studioName: string;
+    timezone: string;
+  } | null>(null);
+  const [initialProfile, setInitialProfile] = useState<{
+    displayName: string;
+    email: string;
+    avatarUrl?: string;
+  } | null>(null);
+  const [initialIntegrations, setInitialIntegrations] = useState<{
+    stripeEnabled: boolean;
+    stripeSecret: string;
+    geminiEnabled: boolean;
+    geminiKey: string;
+    deviantEnabled: boolean;
+    deviantClientId: string;
+    deviantClientSecret: string;
+  } | null>(null);
   const [userName, setUserName] = useState('DreamWeaver User');
   const [userEmail, setUserEmail] = useState('user@dreamweaver.studio');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>();
@@ -85,21 +121,36 @@ const SettingsPage = () => {
   const [profileEmail, setProfileEmail] = useState('user@dreamweaver.studio');
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | undefined>();
 
-  const stripeStatus = useMemo(() => {
-    if (!stripeEnabled) return 'Disabled';
-    if (stripeHasSecret) return `Connected • ****${stripeLast4 ?? ''}`;
-    return 'Enabled • No key';
-  }, [stripeEnabled, stripeHasSecret, stripeLast4]);
-
-  const geminiStatus = useMemo(() => {
-    if (!geminiEnabled) return 'Disabled';
-    return geminiHasKey ? 'Connected' : 'Enabled • No key';
-  }, [geminiEnabled, geminiHasKey]);
-
-  const deviantStatus = useMemo(() => {
-    if (!deviantEnabled) return 'Disabled';
-    return deviantHasSecret ? 'Connected' : 'Enabled • No key';
-  }, [deviantEnabled, deviantHasSecret]);
+  const MASKED_VALUE = '••••••••';
+  const stripeActive = stripeEnabled && stripeHasSecret;
+  const geminiActive = geminiEnabled && geminiHasKey;
+  const deviantActive = deviantEnabled && deviantHasSecret;
+  const studioDisabled = loading || savingStudio;
+  const profileDisabled = loading || savingProfile || uploadingAvatar;
+  const integrationsDisabled = loading || savingIntegrations;
+  const isStudioDirty = Boolean(
+    initialStudio &&
+      (studioDisplayName !== initialStudio.displayName ||
+        studioEmail !== initialStudio.email ||
+        studioName !== initialStudio.studioName ||
+        studioTimezone !== initialStudio.timezone),
+  );
+  const isProfileDirty = Boolean(
+    initialProfile &&
+      (profileDisplayName !== initialProfile.displayName ||
+        profileEmail !== initialProfile.email ||
+        (profileAvatarUrl ?? '') !== (initialProfile.avatarUrl ?? '')),
+  );
+  const isIntegrationsDirty = Boolean(
+    initialIntegrations &&
+      (stripeEnabled !== initialIntegrations.stripeEnabled ||
+        stripeSecret !== initialIntegrations.stripeSecret ||
+        geminiEnabled !== initialIntegrations.geminiEnabled ||
+        geminiKey !== initialIntegrations.geminiKey ||
+        deviantEnabled !== initialIntegrations.deviantEnabled ||
+        deviantClientId !== initialIntegrations.deviantClientId ||
+        deviantClientSecret !== initialIntegrations.deviantClientSecret),
+  );
 
   const pushToast = (type: 'success' | 'error', message: string) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
@@ -146,11 +197,26 @@ const SettingsPage = () => {
         if (!mounted) return;
         setStripeEnabled(settings.stripe.enabled);
         setStripeHasSecret(settings.stripe.hasSecret);
-        setStripeLast4(settings.stripe.last4);
+        const stripeMasked = settings.stripe.hasSecret ? MASKED_VALUE : '';
+        setStripeSecret(stripeMasked);
         setGeminiEnabled(settings.gemini.enabled);
         setGeminiHasKey(settings.gemini.hasSecret);
+        const geminiMasked = settings.gemini.hasSecret ? MASKED_VALUE : '';
+        setGeminiKey(geminiMasked);
         setDeviantEnabled(settings.deviantArt.enabled);
         setDeviantHasSecret(settings.deviantArt.hasSecret);
+        const deviantMasked = settings.deviantArt.hasSecret ? MASKED_VALUE : '';
+        setDeviantClientId(deviantMasked);
+        setDeviantClientSecret(deviantMasked);
+        setInitialIntegrations({
+          stripeEnabled: settings.stripe.enabled,
+          stripeSecret: stripeMasked,
+          geminiEnabled: settings.gemini.enabled,
+          geminiKey: geminiMasked,
+          deviantEnabled: settings.deviantArt.enabled,
+          deviantClientId: deviantMasked,
+          deviantClientSecret: deviantMasked,
+        });
         if (settings.stripe.enabled) {
           const balance = await fetchStripeBalance();
           if (mounted && balance.enabled && balance.available !== undefined) {
@@ -199,6 +265,12 @@ const SettingsPage = () => {
           setStudioEmail(studio.email);
           setStudioName(studio.studioName);
           setStudioTimezone(studio.timezone);
+          setInitialStudio({
+            displayName: studio.displayName,
+            email: studio.email,
+            studioName: studio.studioName,
+            timezone: studio.timezone,
+          });
         }
       } catch (err) {
         if (mounted) {
@@ -223,6 +295,11 @@ const SettingsPage = () => {
         setProfileDisplayName(profile.displayName);
         setProfileEmail(profile.email);
         setProfileAvatarUrl(profile.avatarUrl);
+        setInitialProfile({
+          displayName: profile.displayName,
+          email: profile.email,
+          avatarUrl: profile.avatarUrl,
+        });
       } catch (err) {
         if (mounted) {
           if (await handleUnauthorized(err)) return;
@@ -254,29 +331,56 @@ const SettingsPage = () => {
     setSavingIntegrations(true);
     setError(null);
     try {
+      const stripeSecretValue =
+        stripeSecret && stripeSecret !== MASKED_VALUE ? stripeSecret : undefined;
+      const geminiKeyValue =
+        geminiKey && geminiKey !== MASKED_VALUE ? geminiKey : undefined;
+      const deviantClientIdValue =
+        deviantClientId && deviantClientId !== MASKED_VALUE
+          ? deviantClientId
+          : undefined;
+      const deviantClientSecretValue =
+        deviantClientSecret && deviantClientSecret !== MASKED_VALUE
+          ? deviantClientSecret
+          : undefined;
+
       const stripe = await updateStripeSettings({
         enabled: stripeEnabled,
-        secretKey: stripeSecret || undefined,
+        secretKey: stripeSecretValue,
       });
+      const stripeMasked = stripe.hasSecret ? MASKED_VALUE : '';
+      setStripeEnabled(stripe.enabled);
       setStripeHasSecret(stripe.hasSecret);
-      setStripeLast4(stripe.last4);
-      setStripeSecret('');
+      setStripeSecret(stripeMasked);
 
       const gemini = await updateGeminiSettings({
         enabled: geminiEnabled,
-        apiKey: geminiKey || undefined,
+        apiKey: geminiKeyValue,
       });
+      const geminiMasked = gemini.hasSecret ? MASKED_VALUE : '';
+      setGeminiEnabled(gemini.enabled);
       setGeminiHasKey(gemini.hasSecret);
-      setGeminiKey('');
+      setGeminiKey(geminiMasked);
 
       const deviant = await updateDeviantArtSettings({
         enabled: deviantEnabled,
-        clientId: deviantClientId || undefined,
-        clientSecret: deviantClientSecret || undefined,
+        clientId: deviantClientIdValue,
+        clientSecret: deviantClientSecretValue,
       });
+      const deviantMasked = deviant.hasSecret ? MASKED_VALUE : '';
+      setDeviantEnabled(deviant.enabled);
       setDeviantHasSecret(deviant.hasSecret);
-      setDeviantClientId('');
-      setDeviantClientSecret('');
+      setDeviantClientId(deviantMasked);
+      setDeviantClientSecret(deviantMasked);
+      setInitialIntegrations({
+        stripeEnabled: stripe.enabled,
+        stripeSecret: stripeMasked,
+        geminiEnabled: gemini.enabled,
+        geminiKey: geminiMasked,
+        deviantEnabled: deviant.enabled,
+        deviantClientId: deviantMasked,
+        deviantClientSecret: deviantMasked,
+      });
 
       if (stripe.enabled && stripe.hasSecret) {
         const balance = await fetchStripeBalance();
@@ -312,6 +416,12 @@ const SettingsPage = () => {
       setStudioEmail(updated.email);
       setStudioName(updated.studioName);
       setStudioTimezone(updated.timezone);
+      setInitialStudio({
+        displayName: updated.displayName,
+        email: updated.email,
+        studioName: updated.studioName,
+        timezone: updated.timezone,
+      });
       pushToast('success', 'Studio settings saved.');
     } catch (err) {
       if (await handleUnauthorized(err)) return;
@@ -334,6 +444,11 @@ const SettingsPage = () => {
       setProfileDisplayName(updated.displayName);
       setProfileEmail(updated.email);
       setProfileAvatarUrl(updated.avatarUrl);
+      setInitialProfile({
+        displayName: updated.displayName,
+        email: updated.email,
+        avatarUrl: updated.avatarUrl,
+      });
       pushToast('success', 'Profile updated successfully.');
     } catch (err) {
       if (await handleUnauthorized(err)) return;
@@ -443,70 +558,77 @@ const SettingsPage = () => {
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     General
                   </p>
-                    <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-                      Studio settings
-                    </h3>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
+                    Studio settings
+                  </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleStudioSave}
-                  disabled={savingStudio}
-                  className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingStudio ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Saving...
-                    </span>
-                  ) : (
-                    'Save studio'
-                  )}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <UnsavedBadge show={isStudioDirty} />
+                  <button
+                    type="button"
+                    onClick={handleStudioSave}
+                    disabled={studioDisabled}
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingStudio ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Saving...
+                      </span>
+                    ) : (
+                      'Save studio'
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                        Display name
-                      </label>
-                      <input
-                        type="text"
-                        value={studioDisplayName}
-                        onChange={(event) => setStudioDisplayName(event.target.value)}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={studioEmail}
-                        onChange={(event) => setStudioEmail(event.target.value)}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                        Studio name
-                      </label>
-                      <input
-                        type="text"
-                        value={studioName}
-                        onChange={(event) => setStudioName(event.target.value)}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                        Timezone
-                      </label>
-                      <input
-                        type="text"
-                        value={studioTimezone}
-                        onChange={(event) => setStudioTimezone(event.target.value)}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
-                      />
+                <div>
+                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    Display name
+                  </label>
+                  <input
+                    type="text"
+                    value={studioDisplayName}
+                    onChange={(event) => setStudioDisplayName(event.target.value)}
+                    disabled={studioDisabled}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={studioEmail}
+                    onChange={(event) => setStudioEmail(event.target.value)}
+                    disabled={studioDisabled}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    Studio name
+                  </label>
+                  <input
+                    type="text"
+                    value={studioName}
+                    onChange={(event) => setStudioName(event.target.value)}
+                    disabled={studioDisabled}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    Timezone
+                  </label>
+                  <input
+                    type="text"
+                    value={studioTimezone}
+                    onChange={(event) => setStudioTimezone(event.target.value)}
+                    disabled={studioDisabled}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                  />
                 </div>
               </div>
             </div>
@@ -521,21 +643,24 @@ const SettingsPage = () => {
                     User preferences
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleProfileSave}
-                  disabled={savingProfile}
-                  className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingProfile ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Saving...
-                    </span>
-                  ) : (
-                    'Save profile'
-                  )}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <UnsavedBadge show={isProfileDirty} />
+                  <button
+                    type="button"
+                    onClick={handleProfileSave}
+                    disabled={profileDisabled}
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingProfile ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Saving...
+                      </span>
+                    ) : (
+                      'Save profile'
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
@@ -563,7 +688,7 @@ const SettingsPage = () => {
                 </div>
                 <label
                   className={`ml-auto inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 ${
-                    uploadingAvatar ? 'pointer-events-none opacity-60' : 'cursor-pointer'
+                    profileDisabled ? 'pointer-events-none opacity-60' : 'cursor-pointer'
                   }`}
                 >
                   {uploadingAvatar ? (
@@ -596,6 +721,7 @@ const SettingsPage = () => {
                     type="text"
                     value={profileDisplayName}
                     onChange={(event) => setProfileDisplayName(event.target.value)}
+                    disabled={profileDisabled}
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
@@ -607,6 +733,7 @@ const SettingsPage = () => {
                     type="email"
                     value={profileEmail}
                     onChange={(event) => setProfileEmail(event.target.value)}
+                    disabled={profileDisabled}
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
                   />
                 </div>
@@ -622,10 +749,28 @@ const SettingsPage = () => {
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
                     Plug &amp; play providers
                   </h3>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-foreground/60">
+                    Toggle providers on or off
+                  </p>
                 </div>
-                <span className="text-xs text-slate-500 dark:text-foreground/60">
-                  Toggle providers on or off
-                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <UnsavedBadge show={isIntegrationsDirty} />
+                  <button
+                    type="button"
+                    onClick={handleIntegrationsSave}
+                    disabled={integrationsDisabled}
+                    className="rounded-full bg-primary px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingIntegrations ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Saving...
+                      </span>
+                    ) : (
+                      'Save integrations'
+                    )}
+                  </button>
+                </div>
               </div>
               {error ? (
                 <p className="mt-4 text-sm text-rose-500">{error}</p>
@@ -640,23 +785,35 @@ const SettingsPage = () => {
                       <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
                         Billing &amp; payouts
                       </p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-foreground/60">
-                        {stripeStatus}
-                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
+                        {stripeActive ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-slate-400" />
+                        )}
+                        <span>{stripeActive ? 'Active' : 'Inactive'}</span>
+                      </div>
                     </div>
                     <Toggle
                       enabled={stripeEnabled}
                       onChange={() => setStripeEnabled((prev) => !prev)}
                       label="Enable Stripe integration"
+                      disabled={integrationsDisabled}
                     />
                   </div>
                   {stripeEnabled ? (
                     <div className="mt-4 space-y-3">
                       <input
                         type="password"
-                        placeholder="Stripe secret key"
+                        placeholder="Enter secret key"
                         value={stripeSecret}
                         onChange={(event) => setStripeSecret(event.target.value)}
+                        onFocus={() => {
+                          if (stripeSecret === MASKED_VALUE) {
+                            setStripeSecret('');
+                          }
+                        }}
+                        disabled={integrationsDisabled}
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
                       />
                       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-foreground/60">
@@ -682,23 +839,35 @@ const SettingsPage = () => {
                       <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
                         AI Story Engine
                       </p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-foreground/60">
-                        {geminiStatus}
-                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
+                        {geminiActive ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-slate-400" />
+                        )}
+                        <span>{geminiActive ? 'Active' : 'Inactive'}</span>
+                      </div>
                     </div>
                     <Toggle
                       enabled={geminiEnabled}
                       onChange={() => setGeminiEnabled((prev) => !prev)}
                       label="Enable Gemini integration"
+                      disabled={integrationsDisabled}
                     />
                   </div>
                   {geminiEnabled ? (
                     <div className="mt-4 space-y-3">
                       <input
                         type="password"
-                        placeholder="Gemini API key"
+                        placeholder="Enter API key"
                         value={geminiKey}
                         onChange={(event) => setGeminiKey(event.target.value)}
+                        onFocus={() => {
+                          if (geminiKey === MASKED_VALUE) {
+                            setGeminiKey('');
+                          }
+                        }}
+                        disabled={integrationsDisabled}
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
                       />
                     </div>
@@ -718,30 +887,48 @@ const SettingsPage = () => {
                       <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-foreground">
                         Inspiration feed
                       </p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-foreground/60">
-                        {deviantStatus}
-                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-foreground/60">
+                        {deviantActive ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-slate-400" />
+                        )}
+                        <span>{deviantActive ? 'Active' : 'Inactive'}</span>
+                      </div>
                     </div>
                     <Toggle
                       enabled={deviantEnabled}
                       onChange={() => setDeviantEnabled((prev) => !prev)}
                       label="Enable DeviantArt integration"
+                      disabled={integrationsDisabled}
                     />
                   </div>
                   {deviantEnabled ? (
                     <div className="mt-4 space-y-3">
                       <input
                         type="text"
-                        placeholder="DeviantArt Client ID"
+                        placeholder="Enter client ID"
                         value={deviantClientId}
                         onChange={(event) => setDeviantClientId(event.target.value)}
+                        onFocus={() => {
+                          if (deviantClientId === MASKED_VALUE) {
+                            setDeviantClientId('');
+                          }
+                        }}
+                        disabled={integrationsDisabled}
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
                       />
                       <input
                         type="password"
-                        placeholder="DeviantArt Client Secret"
+                        placeholder="Enter client secret"
                         value={deviantClientSecret}
                         onChange={(event) => setDeviantClientSecret(event.target.value)}
+                        onFocus={() => {
+                          if (deviantClientSecret === MASKED_VALUE) {
+                            setDeviantClientSecret('');
+                          }
+                        }}
+                        disabled={integrationsDisabled}
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
                       />
                     </div>
@@ -751,23 +938,6 @@ const SettingsPage = () => {
                     </p>
                   )}
                 </div>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleIntegrationsSave}
-                  disabled={savingIntegrations || loading}
-                  className="rounded-full bg-primary px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingIntegrations ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Saving...
-                    </span>
-                  ) : (
-                    'Save integrations'
-                  )}
-                </button>
               </div>
             </div>
           )}

@@ -6,7 +6,13 @@ function parseOrigins(raw: string | undefined): string[] | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
-  return trimmed.split(',').map((item) => item.trim()).filter(Boolean);
+  const items = trimmed
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => item.replace(/\/+$/, ''));
+  if (items.includes('*')) return undefined;
+  return items;
 }
 
 export default fp(async function (fastify: FastifyInstance) {
@@ -18,5 +24,6 @@ export default fp(async function (fastify: FastifyInstance) {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   });
 });

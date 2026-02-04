@@ -3,3 +3,4 @@ export * from './lib/firebase';
 export * from './lib/auth';
 export * from './lib/integrations';
 export * from './lib/settings';
+export * from './lib/loading';

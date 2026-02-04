@@ -49,6 +49,18 @@
     }
   }
 
+  @keyframes dw-loading-bar {
+    0% {
+      transform: translateX(-60%);
+    }
+    50% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(60%);
+    }
+  }
+
   .dw-fade-up {
     animation: dw-fade-up 0.6s ease both;
   }
@@ -57,10 +69,31 @@
     animation: dw-fade-in 0.8s ease both;
   }
 
+  .dw-loading-bar {
+    width: 45%;
+    will-change: transform;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--dw-secondary),
+      var(--dw-primary),
+      transparent
+    );
+    border-radius: 9999px;
+    box-shadow: 0 0 12px rgba(124, 92, 255, 0.5);
+    animation: dw-loading-bar 1.15s ease-in-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .dw-fade-up,
     .dw-fade-in {
       animation: none;
+    }
+
+    .dw-loading-bar {
+      animation: none;
+      transform: translateX(0);
+      width: 100%;
     }
   }
 

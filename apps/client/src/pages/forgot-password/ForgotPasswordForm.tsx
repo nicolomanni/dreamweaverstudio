@@ -94,8 +94,9 @@ const ForgotPasswordForm: React.FC = () => {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            disabled={isSubmitting}
             className="w-full rounded-lg border border-input bg-background/70 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-            placeholder="you@dreamweaver.studio"
+            placeholder="name@example.com"
           />
         </div>
         {error ? <p className="text-xs text-rose-400">{error}</p> : null}
