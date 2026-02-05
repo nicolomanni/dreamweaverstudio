@@ -1,11 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 
 import {
   GoogleGenerativeAI,
   GoogleGenerativeAIFetchError,
   type Part,
 } from '@google/generative-ai';
+import * as admin from 'firebase-admin';
 import {
   listComicStyles,
   createComicStyle,
@@ -13,6 +15,7 @@ import {
   deleteComicStyle,
   getComicStyleById,
   getIntegrationSettings,
+  decrementStudioCredits,
 } from '@dreamweaverstudio/server-data-access-db';
 
 const visualStyleSchema = z
@@ -55,6 +58,13 @@ const styleUpdateSchema = stylePayloadSchema.partial();
 const previewSchema = z.object({
   prompt: z.string().min(1),
   negativePrompt: z.string().optional(),
+});
+
+const previewUploadSchema = z.object({
+  dataUrl: z.string().min(1),
+  styleKey: z.string().min(1),
+  styleId: z.string().optional(),
+  promptHash: z.string().optional(),
 });
 
 const STYLE_EXTRACTION_PROMPT = `You are a style extraction assistant. Convert the user's input into a JSON object that matches this schema:
@@ -106,6 +116,22 @@ const stripDataUrlPrefix = (data: string) => {
   if (commaIndex === -1) return data;
   return data.slice(commaIndex + 1);
 };
+
+const parseDataUrl = (dataUrl: string) => {
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) {
+    throw new Error('Invalid image data URL.');
+  }
+  return { mimeType: match[1], base64: match[2] };
+};
+
+const sanitizeKey = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 
 const listQuerySchema = z.object({
   page: z.coerce.number().optional(),
@@ -229,6 +255,7 @@ export default async function stylesRoutes(fastify: FastifyInstance) {
 
       const text = result.response.text();
       const extracted = extractJsonFromText(text);
+      await decrementStudioCredits(1);
       return { style: extracted };
     } catch (err) {
       return reply.code(500).send({
@@ -262,43 +289,97 @@ export default async function stylesRoutes(fastify: FastifyInstance) {
         model: 'gemini-3-pro-image-preview',
       });
 
+      const buildRequest = (promptText: string) => ({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${promptText}\nReturn only the image.` }],
+          },
+        ],
+        generationConfig: {
+          responseModalities: ['IMAGE'],
+        },
+      });
+
+      const extractInlineData = (resp: any) => {
+        const parts = resp?.candidates?.[0]?.content?.parts ?? [];
+        const inline =
+          parts.find((part: any) => part.inlineData)?.inlineData ??
+          parts.find((part: any) => part.inline_data)?.inline_data;
+        return { inline, parts };
+      };
+
       let response: any;
       try {
-        const result = await model.generateContent({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: fullPrompt }],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['IMAGE', 'TEXT'],
-          },
-        } as any);
+        const result = await model.generateContent(
+          buildRequest(fullPrompt) as any,
+        );
         response = result.response as any;
       } catch (err) {
-        const result = await model.generateContent({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: fullPrompt }],
-            },
-          ],
-        } as any);
+        const result = await model.generateContent(
+          {
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: fullPrompt }],
+              },
+            ],
+          } as any,
+        );
         response = result.response as any;
       }
 
-      const parts = response?.candidates?.[0]?.content?.parts ?? [];
-      const inline =
-        parts.find((part: any) => part.inlineData)?.inlineData ??
-        parts.find((part: any) => part.inline_data)?.inline_data;
+      let { inline, parts } = extractInlineData(response);
 
       if (!inline?.data) {
-        return reply.code(502).send({ message: 'Invalid image response.' });
+        const fallbackModel = genAI.getGenerativeModel({
+          model: 'gemini-2.5-flash-image',
+        });
+        try {
+          const fallback = await fallbackModel.generateContent(
+            buildRequest(fullPrompt) as any,
+          );
+          response = fallback.response as any;
+          const extracted = extractInlineData(response);
+          inline = extracted.inline;
+          parts = extracted.parts;
+          if (!inline?.data) {
+            const partSummaries = parts.map((part: any) =>
+              Object.keys(part ?? {}),
+            );
+            fastify.log.warn(
+              {
+                partSummaries,
+                hasText: parts.some((part: any) => Boolean(part?.text)),
+                fallback: true,
+              },
+              'Gemini response missing image data',
+            );
+            return reply
+              .code(502)
+              .send({ message: 'Model did not return image data.' });
+          }
+        } catch (err) {
+          const partSummaries = parts.map((part: any) =>
+            Object.keys(part ?? {}),
+          );
+          fastify.log.warn(
+            {
+              partSummaries,
+              hasText: parts.some((part: any) => Boolean(part?.text)),
+              fallback: false,
+            },
+            'Gemini response missing image data',
+          );
+          return reply
+            .code(502)
+            .send({ message: 'Model did not return image data.' });
+        }
       }
 
       const mimeType = inline.mimeType ?? inline.mime_type ?? 'image/png';
       const dataUrl = `data:${mimeType};base64,${inline.data}`;
+      await decrementStudioCredits(1);
       return { dataUrl };
     } catch (err) {
       if (err instanceof GoogleGenerativeAIFetchError) {
@@ -309,6 +390,55 @@ export default async function stylesRoutes(fastify: FastifyInstance) {
       }
       fastify.log.error({ err }, 'Failed to generate preview image');
       return reply.code(500).send({ message: 'Failed to generate preview.' });
+    }
+  });
+
+  fastify.post('/styles/preview/upload', async (request, reply) => {
+    const parsed = previewUploadSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: 'Invalid upload payload.' });
+    }
+
+    const { dataUrl, styleKey, styleId, promptHash } = parsed.data;
+    let base64: string;
+    let mimeType: string;
+
+    try {
+      const parsedUrl = parseDataUrl(dataUrl);
+      base64 = parsedUrl.base64;
+      mimeType = parsedUrl.mimeType;
+    } catch (err) {
+      return reply.code(400).send({ message: 'Invalid image data.' });
+    }
+
+    const extension = mimeType.split('/')[1] ?? 'png';
+    const safeKey = sanitizeKey(styleKey) || 'style';
+    const folder = styleId ? `styles/${styleId}` : `styles/${safeKey}`;
+    const fileName = promptHash?.trim() || randomUUID();
+    const path = `${folder}/preview/${fileName}.${extension}`;
+
+    try {
+      const bucket = admin.storage().bucket();
+      const file = bucket.file(path);
+      const token = randomUUID();
+      await file.save(Buffer.from(base64, 'base64'), {
+        contentType: mimeType,
+        resumable: false,
+        metadata: {
+          metadata: {
+            firebaseStorageDownloadTokens: token,
+          },
+        },
+      });
+      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
+        path,
+      )}?alt=media&token=${token}`;
+      return { url };
+    } catch (err) {
+      fastify.log.error({ err }, 'Failed to upload preview image');
+      return reply
+        .code(500)
+        .send({ message: 'Failed to upload preview image.' });
     }
   });
 

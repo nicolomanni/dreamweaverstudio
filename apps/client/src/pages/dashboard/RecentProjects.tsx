@@ -117,7 +117,7 @@ const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsPr
     initialState: { pagination: { pageSize: 5 } },
   });
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <section className="dw-card dw-card-body">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
@@ -129,7 +129,7 @@ const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsPr
         </div>
         <button
           type="button"
-          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-200 hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 dark:hover:bg-card/80"
+          className="dw-btn dw-btn-sm dw-btn-outline"
         >
           View all
         </button>
@@ -170,14 +170,14 @@ const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsPr
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
         </span>
         <div className="flex items-center gap-2">
-          <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+          <label className="dw-label">
             Per page
           </label>
           <div className="relative">
             <select
               value={table.getState().pagination.pageSize}
               onChange={(event) => table.setPageSize(Number(event.target.value))}
-              className="peer h-8 appearance-none rounded-full border border-slate-200 bg-slate-50 px-3 py-1 pr-8 text-xs text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+              className="dw-select dw-select-sm"
             >
               <option value={5}>5</option>
               <option value={8}>8</option>
@@ -189,7 +189,7 @@ const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsPr
             type="button"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:bg-card dark:text-foreground/70"
+            className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-outline"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -197,7 +197,7 @@ const RecentProjects = ({ currency = 'USD', locale = 'en-US' }: RecentProjectsPr
             type="button"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:bg-card dark:text-foreground/70"
+            className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-outline"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

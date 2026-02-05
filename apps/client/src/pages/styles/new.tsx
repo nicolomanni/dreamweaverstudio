@@ -4,6 +4,7 @@ import {
   extractStyleFromImage,
   extractStyleFromPrompt,
   generateStylePreview,
+  uploadStylePreviewImage,
 } from '@dreamweaverstudio/client-data-access-api';
 import type { ComicStyle } from '@dreamweaverstudio/shared-types';
 import { signOutUser } from '../../auth';
@@ -31,7 +32,7 @@ import {
   slugify,
 } from './style-utils';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { hashString, uploadStylePreviewImage } from '../../utils/storage';
+import { hashString } from '../../utils/hash';
 
 const visualFields: {
   key: VisualStyleKey;
@@ -93,12 +94,10 @@ const StyleCreatePage = () => {
   const canShowForm = mode === 'manual' || hasExtracted;
   const hasFieldError = (key: string) =>
     showValidation && validation.missing.includes(key);
-  const inputBase =
-    'mt-2 w-full rounded-xl border px-4 py-2 text-sm focus:outline-none transition-colors';
-  const inputNormal =
-    'border-slate-200 bg-slate-50 text-slate-700 focus:border-primary dark:border-border dark:bg-background dark:text-foreground';
-  const inputError =
-    'border-rose-300 bg-rose-50 text-rose-700 placeholder-rose-300 focus:border-rose-500 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100';
+  const inputBase = 'mt-2 dw-input';
+  const textAreaBase = 'mt-2 dw-textarea';
+  const inputNormal = '';
+  const inputError = 'dw-input-error';
 
   const handleUnauthorized = async (err: unknown) => {
     if (err instanceof Error && err.message === 'unauthorized') {
@@ -128,6 +127,7 @@ const StyleCreatePage = () => {
       const extracted = await extractStyleFromPrompt(examplePrompt);
       applyExtractedStyle(extracted);
       setActiveTab('basics');
+      queryClient.invalidateQueries({ queryKey: ['studioSettings'] });
     } catch (err) {
       if (await handleUnauthorized(err)) return;
       setError('Unable to extract style from prompt.');
@@ -150,6 +150,7 @@ const StyleCreatePage = () => {
         previewImageUrl: exampleImage.dataUrl,
       });
       setActiveTab('basics');
+      queryClient.invalidateQueries({ queryKey: ['studioSettings'] });
     } catch (err) {
       if (await handleUnauthorized(err)) return;
       setError('Unable to extract style from image.');
@@ -175,10 +176,13 @@ const StyleCreatePage = () => {
     mutationFn: generateStylePreview,
     onSuccess: (data) => {
       setDraft((prev) => ({ ...prev, previewImageUrl: data.dataUrl }));
+      queryClient.invalidateQueries({ queryKey: ['studioSettings'] });
     },
     onError: async (err) => {
       if (await handleUnauthorized(err)) return;
-      setPreviewError('Unable to generate preview image.');
+      setPreviewError(
+        err instanceof Error ? err.message : 'Unable to generate preview image.',
+      );
     },
   });
 
@@ -189,36 +193,13 @@ const StyleCreatePage = () => {
       return;
     }
     setError(null);
-    const previewPrompt = buildPreviewPrompt(draft);
-    const negativePrompt = draft.negativePrompt?.trim() || undefined;
-    let previewImageUrl = draft.previewImageUrl;
-
-    if (!previewImageUrl) {
-      if (!previewPrompt.trim()) {
-        setPreviewError('Add some style details before generating a preview.');
-        return;
-      }
-      setPreviewError(null);
-      try {
-        const data = await previewMutation.mutateAsync({
-          prompt: previewPrompt,
-          negativePrompt,
-        });
-        previewImageUrl = data.dataUrl;
-      } catch (err) {
-        return;
-      }
-    }
-
-    let payload = buildPayload({
-      ...draft,
-      previewImageUrl: previewImageUrl ?? draft.previewImageUrl,
-    });
-
-    if (previewImageUrl?.startsWith('data:')) {
+    let payload = buildPayload(draft);
+    if (draft.previewImageUrl?.startsWith('data:')) {
       try {
         setUploadingPreview(true);
         const styleKey = slugify(payload.key ?? payload.name);
+        const previewPrompt = buildPreviewPrompt(draft);
+        const negativePrompt = draft.negativePrompt?.trim() || undefined;
         const hashInput = [
           previewPrompt.trim(),
           negativePrompt ? `NEGATIVE:${negativePrompt}` : '',
@@ -226,14 +207,17 @@ const StyleCreatePage = () => {
           .filter(Boolean)
           .join('\n');
         const promptHash = hashInput ? await hashString(hashInput) : undefined;
-        const url = await uploadStylePreviewImage(previewImageUrl, {
+        const uploaded = await uploadStylePreviewImage({
+          dataUrl: draft.previewImageUrl,
           styleKey,
           promptHash,
         });
-        payload = { ...payload, previewImageUrl: url };
-        setDraft((prev) => ({ ...prev, previewImageUrl: url }));
+        payload = { ...payload, previewImageUrl: uploaded.url };
+        setDraft((prev) => ({ ...prev, previewImageUrl: uploaded.url }));
       } catch (err) {
-        setError('Unable to upload preview image.');
+        setError(
+          err instanceof Error ? err.message : 'Unable to upload preview image.',
+        );
         return;
       } finally {
         setUploadingPreview(false);
@@ -275,8 +259,8 @@ const StyleCreatePage = () => {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+      <div className="dw-card">
+        <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
               <span>Catalog</span>
@@ -292,9 +276,10 @@ const StyleCreatePage = () => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-border dark:bg-background">
+        <div className="dw-card-body">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <div className="space-y-5">
+            <div className="dw-card-muted dw-card-body-sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Start from
               </p>
@@ -363,14 +348,14 @@ const StyleCreatePage = () => {
                     value={examplePrompt}
                     onChange={(event) => setExamplePrompt(event.target.value)}
                     rows={5}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-card dark:text-foreground"
+                    className="dw-textarea"
                     placeholder="Paste your example prompt here..."
                   />
                   <button
                     type="button"
                     onClick={handlePromptExtract}
                     disabled={extracting || !examplePrompt.trim()}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="dw-btn dw-btn-md dw-btn-primary"
                   >
                     {extracting ? 'Extracting...' : 'Extract with Gemini'}
                   </button>
@@ -393,7 +378,7 @@ const StyleCreatePage = () => {
                       </div>
                     )}
                   </div>
-                  <label className="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-700 transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground/80">
+                  <label className="dw-btn dw-btn-md dw-btn-outline w-full">
                     Upload image
                     <input
                       type="file"
@@ -417,7 +402,7 @@ const StyleCreatePage = () => {
                     type="button"
                     onClick={handleImageExtract}
                     disabled={extracting || !exampleImage}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="dw-btn dw-btn-md dw-btn-primary"
                   >
                     {extracting ? 'Extracting...' : 'Extract with Gemini'}
                   </button>
@@ -426,7 +411,7 @@ const StyleCreatePage = () => {
 
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-border dark:bg-background">
+            <div className="dw-card-muted dw-card-body-sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Presets
               </p>
@@ -442,7 +427,7 @@ const StyleCreatePage = () => {
                 <button
                   type="button"
                   onClick={() => applyExtractedStyle(DREAMWEAVER_PRESET)}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 dark:hover:bg-card/80"
+                  className="dw-btn dw-btn-md dw-btn-outline"
                 >
                   <Sparkles className="h-4 w-4" />
                   Apply preset
@@ -468,7 +453,7 @@ const StyleCreatePage = () => {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500 dark:border-border dark:bg-card dark:text-foreground/60">
+              <div className="dw-card dw-card-body-sm text-sm text-slate-500 dark:text-foreground/60">
                 Complete the extraction step to unlock the style editor.
               </div>
             )}
@@ -488,7 +473,7 @@ const StyleCreatePage = () => {
             {canShowForm && activeTab === 'basics' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Style name
                       <span className="text-rose-500">*</span>
@@ -520,7 +505,7 @@ const StyleCreatePage = () => {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Key
                       <span className="text-rose-500">*</span>
@@ -544,7 +529,7 @@ const StyleCreatePage = () => {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Status
                   </label>
                   <div className="relative mt-2">
@@ -556,7 +541,7 @@ const StyleCreatePage = () => {
                           status: event.target.value as ComicStyle['status'],
                         }))
                       }
-                      className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                      className="dw-select"
                     >
                       <option value="active">Active</option>
                       <option value="archived">Archived</option>
@@ -591,13 +576,13 @@ const StyleCreatePage = () => {
                     <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
                       Default style
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-foreground/60">
+                    <p className="dw-helper">
                       Used automatically for new comics.
                     </p>
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Description
                   </label>
                   <textarea
@@ -609,7 +594,7 @@ const StyleCreatePage = () => {
                       }))
                     }
                     rows={3}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 dw-textarea"
                   />
                 </div>
               </div>
@@ -619,7 +604,7 @@ const StyleCreatePage = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 {visualFields.map((field) => (
                   <div key={field.key}>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         {field.label}
                         {field.required ? (
@@ -657,7 +642,7 @@ const StyleCreatePage = () => {
             {canShowForm && activeTab === 'prompt' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">System prompt</span>
                   </label>
                   <textarea
@@ -669,11 +654,11 @@ const StyleCreatePage = () => {
                       }))
                     }
                     rows={4}
-                    className={`${inputBase} ${inputNormal}`}
+                    className={textAreaBase}
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Prompt template
                       <span className="text-rose-500">*</span>
@@ -689,8 +674,8 @@ const StyleCreatePage = () => {
                     }
                     rows={8}
                     aria-invalid={hasFieldError('promptTemplate')}
-                    className={`${inputBase} font-mono text-xs ${
-                      hasFieldError('promptTemplate') ? inputError : inputNormal
+                    className={`${textAreaBase} font-mono text-xs ${
+                      hasFieldError('promptTemplate') ? inputError : ''
                     }`}
                   />
                   {hasFieldError('promptTemplate') ? (
@@ -701,7 +686,7 @@ const StyleCreatePage = () => {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         Technical tags
                         <span className="text-rose-500">*</span>
@@ -717,8 +702,8 @@ const StyleCreatePage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('technicalTags')}
-                      className={`${inputBase} ${
-                        hasFieldError('technicalTags') ? inputError : inputNormal
+                      className={`${textAreaBase} ${
+                        hasFieldError('technicalTags') ? inputError : ''
                       }`}
                     />
                     {hasFieldError('technicalTags') ? (
@@ -728,7 +713,7 @@ const StyleCreatePage = () => {
                     ) : null}
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         Negative prompt
                         <span className="text-rose-500">*</span>
@@ -744,8 +729,8 @@ const StyleCreatePage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('negativePrompt')}
-                      className={`${inputBase} ${
-                        hasFieldError('negativePrompt') ? inputError : inputNormal
+                      className={`${textAreaBase} ${
+                        hasFieldError('negativePrompt') ? inputError : ''
                       }`}
                     />
                     {hasFieldError('negativePrompt') ? (
@@ -757,7 +742,7 @@ const StyleCreatePage = () => {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       Continuity rules
                     </label>
                     <textarea
@@ -769,11 +754,11 @@ const StyleCreatePage = () => {
                         }))
                       }
                       rows={4}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                      className={textAreaBase}
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       Format guidelines
                     </label>
                     <textarea
@@ -785,7 +770,7 @@ const StyleCreatePage = () => {
                         }))
                       }
                       rows={4}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                      className={textAreaBase}
                     />
                   </div>
                 </div>
@@ -795,7 +780,7 @@ const StyleCreatePage = () => {
             {canShowForm && activeTab === 'safety' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Interaction language
                       <span className="text-rose-500">*</span>
@@ -811,10 +796,8 @@ const StyleCreatePage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('interactionLanguage')}
-                      className={`peer h-10 w-full appearance-none rounded-xl border px-4 py-2 pr-10 text-sm focus:outline-none ${
-                        hasFieldError('interactionLanguage')
-                          ? inputError
-                          : inputNormal
+                      className={`dw-select ${
+                        hasFieldError('interactionLanguage') ? inputError : ''
                       }`}
                     >
                       <option value="Italian">Italian</option>
@@ -829,7 +812,7 @@ const StyleCreatePage = () => {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Prompt language
                       <span className="text-rose-500">*</span>
@@ -845,8 +828,8 @@ const StyleCreatePage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('promptLanguage')}
-                      className={`peer h-10 w-full appearance-none rounded-xl border px-4 py-2 pr-10 text-sm focus:outline-none ${
-                        hasFieldError('promptLanguage') ? inputError : inputNormal
+                      className={`dw-select ${
+                        hasFieldError('promptLanguage') ? inputError : ''
                       }`}
                     >
                       <option value="English">English</option>
@@ -887,7 +870,7 @@ const StyleCreatePage = () => {
                     <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
                       SFW only
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-foreground/60">
+                    <p className="dw-helper">
                       Enforce safe-for-work output across prompts.
                     </p>
                   </div>
@@ -896,8 +879,8 @@ const StyleCreatePage = () => {
             ) : null}
           </div>
 
-          <aside className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-border dark:bg-background">
+            <aside className="space-y-4">
+            <div className="dw-card-muted dw-card-body-sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Preview
               </p>
@@ -915,7 +898,7 @@ const StyleCreatePage = () => {
                   </div>
                 )}
               </div>
-              <label className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-700 transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground/80">
+              <label className="dw-btn dw-btn-md dw-btn-outline mt-4 w-full">
                 Upload preview
                 <input
                   type="file"
@@ -933,7 +916,7 @@ const StyleCreatePage = () => {
                 type="button"
                 onClick={handleGeneratePreview}
                 disabled={previewMutation.isPending}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="dw-btn dw-btn-md dw-btn-primary mt-3 w-full"
               >
                 <Sparkles className="h-4 w-4" />
                 {previewMutation.isPending ? 'Generating...' : 'Generate preview'}
@@ -958,14 +941,15 @@ const StyleCreatePage = () => {
                 <span>{draft.status === 'archived' ? 'Archived' : 'Active'}</span>
               </div>
             </div>
-          </aside>
+            </aside>
+          </div>
         </div>
 
-        <div className="sticky bottom-0 z-10 -mx-6 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-6 py-4 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:border-border dark:bg-card/95 dark:shadow-[0_-12px_40px_rgba(15,23,42,0.6)]">
+        <div className="dw-card-footer sticky bottom-0 z-10 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:bg-card/95 dark:shadow-[0_-12px_40px_rgba(15,23,42,0.6)]">
           <button
             type="button"
             onClick={handleDiscard}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground/70 dark:hover:bg-background"
+            className="dw-btn dw-btn-md dw-btn-outline"
           >
             Discard
           </button>
@@ -978,7 +962,7 @@ const StyleCreatePage = () => {
               uploadingPreview ||
               previewMutation.isPending
             }
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="dw-btn dw-btn-lg dw-btn-primary"
           >
             {uploadingPreview
               ? 'Uploading preview...'

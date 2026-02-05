@@ -12,7 +12,7 @@ const UpcomingTasks = ({ currency = 'USD', locale = 'en-US' }: UpcomingTasksProp
   const growthPercent = 12;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <div className="dw-card dw-card-body">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
           Sales target
@@ -30,7 +30,7 @@ const UpcomingTasks = ({ currency = 'USD', locale = 'en-US' }: UpcomingTasksProp
           <p className="text-2xl font-semibold text-slate-900 dark:text-foreground">
             {formatCurrencyCompact(currentAmount, currency, locale)}
           </p>
-          <p className="text-xs text-slate-500 dark:text-foreground/60">
+          <p className="dw-helper">
             Target {formatCurrencyCompact(targetAmount, currency, locale)} • +
             {formatNumber(growthPercent, locale)}% this month
           </p>

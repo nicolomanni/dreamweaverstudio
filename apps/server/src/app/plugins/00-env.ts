@@ -15,6 +15,7 @@ const schema = {
     FIREBASE_PROJECT_ID: { type: 'string' },
     FIREBASE_CLIENT_EMAIL: { type: 'string' },
     FIREBASE_PRIVATE_KEY: { type: 'string' },
+    FIREBASE_STORAGE_BUCKET: { type: 'string' },
   },
 };
 

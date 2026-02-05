@@ -3,6 +3,7 @@ import {
   deleteStyle,
   fetchStyle,
   generateStylePreview,
+  uploadStylePreviewImage,
   updateStyle,
 } from '@dreamweaverstudio/client-data-access-api';
 import type { ComicStyle } from '@dreamweaverstudio/shared-types';
@@ -10,13 +11,12 @@ import { signOutUser } from '../../auth';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Image,
   Sparkles,
   Trash2,
-  XCircle,
 } from 'lucide-react';
 import {
   buildDraft,
@@ -29,7 +29,7 @@ import {
   slugify,
 } from './style-utils';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { hashString, uploadStylePreviewImage } from '../../utils/storage';
+import { hashString } from '../../utils/hash';
 
 const visualFields: {
   key: VisualStyleKey;
@@ -72,12 +72,10 @@ const StyleDetailPage = () => {
   );
   const hasFieldError = (key: string) =>
     showValidation && validation.missing.includes(key);
-  const inputBase =
-    'mt-2 w-full rounded-xl border px-4 py-2 text-sm focus:outline-none transition-colors';
-  const inputNormal =
-    'border-slate-200 bg-slate-50 text-slate-700 focus:border-primary dark:border-border dark:bg-background dark:text-foreground';
-  const inputError =
-    'border-rose-300 bg-rose-50 text-rose-700 placeholder-rose-300 focus:border-rose-500 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-100';
+  const inputBase = 'mt-2 dw-input';
+  const textAreaBase = 'mt-2 dw-textarea';
+  const inputNormal = '';
+  const inputError = 'dw-input-error';
 
   const isDirty = useMemo(() => {
     if (!style) return true;
@@ -134,10 +132,15 @@ const StyleDetailPage = () => {
     mutationFn: generateStylePreview,
     onSuccess: (data) => {
       setDraft((prev) => ({ ...prev, previewImageUrl: data.dataUrl }));
+      queryClient.invalidateQueries({ queryKey: ['studioSettings'] });
     },
     onError: async (err) => {
       if (await handleUnauthorized(err)) return;
-      setPreviewError('Unable to generate preview image.');
+      setPreviewError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to generate preview image.',
+      );
     },
   });
 
@@ -147,38 +150,15 @@ const StyleDetailPage = () => {
       return;
     }
     setError(null);
-    const previewPrompt = buildPreviewPrompt(draft);
-    const negativePrompt = draft.negativePrompt?.trim() || undefined;
-    let previewImageUrl = draft.previewImageUrl;
-
-    if (!previewImageUrl) {
-      if (!previewPrompt.trim()) {
-        setPreviewError('Add some style details before generating a preview.');
-        return;
-      }
-      setPreviewError(null);
-      try {
-        const data = await previewMutation.mutateAsync({
-          prompt: previewPrompt,
-          negativePrompt,
-        });
-        previewImageUrl = data.dataUrl;
-      } catch (err) {
-        return;
-      }
-    }
-
-    let payload = buildPayload({
-      ...draft,
-      previewImageUrl: previewImageUrl ?? draft.previewImageUrl,
-    });
-
-    if (previewImageUrl?.startsWith('data:')) {
+    let payload = buildPayload(draft);
+    if (draft.previewImageUrl?.startsWith('data:')) {
       try {
         setUploadingPreview(true);
         const styleKey = slugify(
           payload.key ?? payload.name ?? style?.name ?? 'style',
         );
+        const previewPrompt = buildPreviewPrompt(draft);
+        const negativePrompt = draft.negativePrompt?.trim() || undefined;
         const hashInput = [
           previewPrompt.trim(),
           negativePrompt ? `NEGATIVE:${negativePrompt}` : '',
@@ -186,15 +166,20 @@ const StyleDetailPage = () => {
           .filter(Boolean)
           .join('\n');
         const promptHash = hashInput ? await hashString(hashInput) : undefined;
-        const url = await uploadStylePreviewImage(previewImageUrl, {
+        const uploaded = await uploadStylePreviewImage({
+          dataUrl: draft.previewImageUrl,
           styleKey,
           styleId: style?.id ?? styleId,
           promptHash,
         });
-        payload = { ...payload, previewImageUrl: url };
-        setDraft((prev) => ({ ...prev, previewImageUrl: url }));
+        payload = { ...payload, previewImageUrl: uploaded.url };
+        setDraft((prev) => ({ ...prev, previewImageUrl: uploaded.url }));
       } catch (err) {
-        setError('Unable to upload preview image.');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to upload preview image.',
+        );
         return;
       } finally {
         setUploadingPreview(false);
@@ -251,10 +236,10 @@ const StyleDetailPage = () => {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+      <div className="dw-card">
+        <div className="dw-card-header dw-card-header-compact sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
+            <div className="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
               <span>Catalog</span>
               <ChevronRight className="h-3 w-3" />
               <span>Styles</span>
@@ -266,16 +251,25 @@ const StyleDetailPage = () => {
               Fine-tune prompt structure and visual consistency.
             </p>
           </div>
-          {isDirty ? (
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-600 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-              Unsaved changes
-            </span>
-          ) : (
-            <div />
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate({ to: '/styles' })}
+              className="dw-btn dw-btn-sm dw-btn-outline"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to list
+            </button>
+            {isDirty ? (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-600 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                Unsaved changes
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+        <div className="dw-card-body">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-4 pb-2">
               {tabs.map((tab) => (
@@ -309,7 +303,7 @@ const StyleDetailPage = () => {
             {activeTab === 'basics' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Style name
                       <span className="text-rose-500">*</span>
@@ -331,7 +325,7 @@ const StyleDetailPage = () => {
                     }}
                     aria-invalid={hasFieldError('name')}
                     className={`${inputBase} ${
-                      hasFieldError('name') ? inputError : inputNormal
+                      hasFieldError('name') ? inputError : ''
                     }`}
                   />
                   {hasFieldError('name') ? (
@@ -341,7 +335,7 @@ const StyleDetailPage = () => {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Key
                       <span className="text-rose-500">*</span>
@@ -355,7 +349,7 @@ const StyleDetailPage = () => {
                     }
                     aria-invalid={hasFieldError('key')}
                     className={`${inputBase} ${
-                      hasFieldError('key') ? inputError : inputNormal
+                      hasFieldError('key') ? inputError : ''
                     }`}
                   />
                   {hasFieldError('key') ? (
@@ -364,61 +358,8 @@ const StyleDetailPage = () => {
                     </p>
                   ) : null}
                 </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    Status
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      value={draft.status ?? 'active'}
-                      onChange={(event) =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          status: event.target.value as ComicStyle['status'],
-                        }))
-                      }
-                      className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
-                    >
-                      <option value="active">Active</option>
-                      <option value="archived">Archived</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        isDefault: !prev.isDefault,
-                      }))
-                    }
-                    aria-label="Toggle default style"
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
-                      draft.isDefault
-                        ? 'bg-primary'
-                        : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                        draft.isDefault ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
-                      Default style
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-foreground/60">
-                      Used automatically for new comics.
-                    </p>
-                  </div>
-                </div>
                 <div className="md:col-span-2">
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Description
                   </label>
                   <textarea
@@ -430,7 +371,7 @@ const StyleDetailPage = () => {
                       }))
                     }
                     rows={3}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                    className={textAreaBase}
                   />
                 </div>
               </div>
@@ -440,7 +381,7 @@ const StyleDetailPage = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 {visualFields.map((field) => (
                   <div key={field.key}>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         {field.label}
                         {field.required ? (
@@ -462,7 +403,7 @@ const StyleDetailPage = () => {
                       }
                       aria-invalid={hasFieldError(field.key)}
                       className={`${inputBase} ${
-                        hasFieldError(field.key) ? inputError : inputNormal
+                        hasFieldError(field.key) ? inputError : ''
                       }`}
                     />
                     {hasFieldError(field.key) ? (
@@ -478,8 +419,10 @@ const StyleDetailPage = () => {
             {activeTab === 'prompt' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    <span className="flex items-center gap-1">System prompt</span>
+                  <label className="dw-label">
+                    <span className="flex items-center gap-1">
+                      System prompt
+                    </span>
                   </label>
                   <textarea
                     value={draft.systemPrompt ?? ''}
@@ -490,11 +433,11 @@ const StyleDetailPage = () => {
                       }))
                     }
                     rows={4}
-                    className={`${inputBase} ${inputNormal}`}
+                    className={textAreaBase}
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Prompt template
                       <span className="text-rose-500">*</span>
@@ -510,8 +453,8 @@ const StyleDetailPage = () => {
                     }
                     rows={8}
                     aria-invalid={hasFieldError('promptTemplate')}
-                    className={`${inputBase} font-mono text-xs ${
-                      hasFieldError('promptTemplate') ? inputError : inputNormal
+                    className={`${textAreaBase} font-mono text-xs ${
+                      hasFieldError('promptTemplate') ? inputError : ''
                     }`}
                   />
                   {hasFieldError('promptTemplate') ? (
@@ -522,7 +465,7 @@ const StyleDetailPage = () => {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         Technical tags
                         <span className="text-rose-500">*</span>
@@ -538,8 +481,8 @@ const StyleDetailPage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('technicalTags')}
-                      className={`${inputBase} ${
-                        hasFieldError('technicalTags') ? inputError : inputNormal
+                      className={`${textAreaBase} ${
+                        hasFieldError('technicalTags') ? inputError : ''
                       }`}
                     />
                     {hasFieldError('technicalTags') ? (
@@ -549,7 +492,7 @@ const StyleDetailPage = () => {
                     ) : null}
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       <span className="flex items-center gap-1">
                         Negative prompt
                         <span className="text-rose-500">*</span>
@@ -565,8 +508,8 @@ const StyleDetailPage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('negativePrompt')}
-                      className={`${inputBase} ${
-                        hasFieldError('negativePrompt') ? inputError : inputNormal
+                      className={`${textAreaBase} ${
+                        hasFieldError('negativePrompt') ? inputError : ''
                       }`}
                     />
                     {hasFieldError('negativePrompt') ? (
@@ -578,7 +521,7 @@ const StyleDetailPage = () => {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       Continuity rules
                     </label>
                     <textarea
@@ -590,11 +533,11 @@ const StyleDetailPage = () => {
                         }))
                       }
                       rows={4}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                      className={textAreaBase}
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                    <label className="dw-label">
                       Format guidelines
                     </label>
                     <textarea
@@ -606,7 +549,7 @@ const StyleDetailPage = () => {
                         }))
                       }
                       rows={4}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-border dark:bg-background dark:text-foreground"
+                      className={textAreaBase}
                     />
                   </div>
                 </div>
@@ -616,7 +559,7 @@ const StyleDetailPage = () => {
             {activeTab === 'safety' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Interaction language
                       <span className="text-rose-500">*</span>
@@ -632,10 +575,8 @@ const StyleDetailPage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('interactionLanguage')}
-                      className={`peer h-10 w-full appearance-none rounded-xl border px-4 py-2 pr-10 text-sm focus:outline-none ${
-                        hasFieldError('interactionLanguage')
-                          ? inputError
-                          : inputNormal
+                      className={`dw-select ${
+                        hasFieldError('interactionLanguage') ? inputError : ''
                       }`}
                     >
                       <option value="Italian">Italian</option>
@@ -650,7 +591,7 @@ const StyleDetailPage = () => {
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     <span className="flex items-center gap-1">
                       Prompt language
                       <span className="text-rose-500">*</span>
@@ -666,8 +607,8 @@ const StyleDetailPage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('promptLanguage')}
-                      className={`peer h-10 w-full appearance-none rounded-xl border px-4 py-2 pr-10 text-sm focus:outline-none ${
-                        hasFieldError('promptLanguage') ? inputError : inputNormal
+                      className={`dw-select ${
+                        hasFieldError('promptLanguage') ? inputError : ''
                       }`}
                     >
                       <option value="English">English</option>
@@ -700,7 +641,9 @@ const StyleDetailPage = () => {
                     <span
                       aria-hidden="true"
                       className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                        draft.safety?.sfwOnly ? 'translate-x-5' : 'translate-x-0'
+                        draft.safety?.sfwOnly
+                          ? 'translate-x-5'
+                          : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -708,18 +651,17 @@ const StyleDetailPage = () => {
                     <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
                       SFW only
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-foreground/60">
+                    <p className="dw-helper">
                       Enforce safe-for-work output across prompts.
                     </p>
                   </div>
                 </div>
               </div>
             ) : null}
-
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-border dark:bg-background">
+            <div className="dw-card-muted dw-card-body-sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Preview
               </p>
@@ -737,7 +679,7 @@ const StyleDetailPage = () => {
                   </div>
                 )}
               </div>
-              <label className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-700 transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground/80">
+              <label className="dw-btn dw-btn-md dw-btn-outline mt-4 w-full">
                 Upload preview
                 <input
                   type="file"
@@ -755,10 +697,12 @@ const StyleDetailPage = () => {
                 type="button"
                 onClick={handleGeneratePreview}
                 disabled={previewMutation.isPending}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="dw-btn dw-btn-md dw-btn-primary mt-3 w-full"
               >
                 <Sparkles className="h-4 w-4" />
-                {previewMutation.isPending ? 'Generating...' : 'Generate preview'}
+                {previewMutation.isPending
+                  ? 'Generating...'
+                  : 'Generate preview'}
               </button>
               {previewError ? (
                 <p className="mt-3 text-xs text-rose-600 dark:text-rose-300">
@@ -769,37 +713,99 @@ const StyleDetailPage = () => {
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-                Status
+                Controls
               </p>
-              <div className="mt-3 flex items-center gap-2">
-                {draft.status === 'archived' ? (
-                  <XCircle className="h-4 w-4 text-rose-500" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                )}
-                <span>{draft.status === 'archived' ? 'Archived' : 'Active'}</span>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
+                      Default style
+                    </p>
+                    <p className="dw-helper">
+                      Use this style for new comics by default.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        isDefault: !prev.isDefault,
+                      }))
+                    }
+                    aria-label="Toggle default style"
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
+                      draft.isDefault
+                        ? 'bg-primary'
+                        : 'bg-slate-200 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                        draft.isDefault ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
+                      Active
+                    </p>
+                    <p className="dw-helper">
+                      Turn off to archive this style.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        status:
+                          prev.status === 'archived' ? 'active' : 'archived',
+                      }))
+                    }
+                    aria-label="Toggle active status"
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
+                      draft.status === 'archived'
+                        ? 'bg-slate-200 dark:bg-slate-700'
+                        : 'bg-primary'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                        draft.status === 'archived'
+                          ? 'translate-x-0'
+                          : 'translate-x-5'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </aside>
         </div>
 
-        {styleQuery.isLoading ? (
-          <div className="mt-4 text-xs text-slate-500 dark:text-foreground/60">
-            Loading style details...
-          </div>
-        ) : null}
+          {styleQuery.isLoading ? (
+            <div className="mt-4 dw-helper">
+              Loading style details...
+            </div>
+          ) : null}
+        </div>
 
-        <div className="sticky bottom-0 z-10 -mx-6 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+        <div className="dw-card-footer dw-card-footer-compact sticky bottom-0 z-10 bg-white/95 backdrop-blur dark:bg-card/95">
           <button
             type="button"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+            className="dw-btn dw-btn-md dw-btn-danger self-center"
           >
             <Trash2 className="h-4 w-4" />
             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
           </button>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 self-center">
             <button
               type="button"
               onClick={handleSave}
@@ -810,7 +816,7 @@ const StyleDetailPage = () => {
                 uploadingPreview ||
                 previewMutation.isPending
               }
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="dw-btn dw-btn-lg dw-btn-primary"
             >
               {uploadingPreview
                 ? 'Uploading preview...'

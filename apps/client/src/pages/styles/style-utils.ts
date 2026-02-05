@@ -149,6 +149,9 @@ export const buildPayload = (draft: StyleDraft) => ({
 
 export const buildPreviewPrompt = (draft: StyleDraft) => {
   const lines: string[] = [];
+  lines.push(
+    'Subject: close-up portrait of a young male character (teen/young adult), friendly expression, head-and-shoulders framing, neutral background.',
+  );
   if (draft.name?.trim()) {
     lines.push(`Style name: ${draft.name.trim()}.`);
   }

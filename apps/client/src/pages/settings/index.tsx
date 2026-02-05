@@ -829,7 +829,7 @@ const SettingsPage = () => {
         ))}
       </div>
       <section className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card">
+        <aside className="dw-card dw-card-body-sm">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
             Settings
           </p>
@@ -868,8 +868,8 @@ const SettingsPage = () => {
 
         <div className="space-y-6">
           {activeSection === 'general' ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+            <div className="dw-card">
+              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     General
@@ -884,7 +884,7 @@ const SettingsPage = () => {
                     type="button"
                     onClick={handleStudioSave}
                     disabled={studioDisabled}
-                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="dw-btn dw-btn-md dw-btn-primary"
                   >
                     {savingStudio ? (
                       <span className="inline-flex items-center gap-2">
@@ -897,9 +897,10 @@ const SettingsPage = () => {
                   </button>
                 </div>
               </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="dw-card-body">
+                <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Display name
                   </label>
                   <input
@@ -907,11 +908,11 @@ const SettingsPage = () => {
                     value={studioDisplayName}
                     onChange={(event) => setStudioDisplayName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 dw-input"
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Email
                   </label>
                   <input
@@ -919,11 +920,11 @@ const SettingsPage = () => {
                     value={studioEmail}
                     onChange={(event) => setStudioEmail(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 dw-input"
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Studio name
                   </label>
                   <input
@@ -931,11 +932,11 @@ const SettingsPage = () => {
                     value={studioName}
                     onChange={(event) => setStudioName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 dw-input"
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                  <label className="dw-label">
                     Timezone
                   </label>
                   <input
@@ -943,37 +944,38 @@ const SettingsPage = () => {
                     value={studioTimezone}
                     onChange={(event) => setStudioTimezone(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                    className="mt-2 dw-input"
                   />
                 </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    Number format
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      value={numberFormatLocale}
-                      onChange={(event) => setNumberFormatLocale(event.target.value)}
-                      disabled={studioDisabled}
-                      className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
-                    >
-                      {numberFormatOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                  <div>
+                    <label className="dw-label">
+                      Number format
+                    </label>
+                    <div className="relative mt-2">
+                      <select
+                        value={numberFormatLocale}
+                        onChange={(event) => setNumberFormatLocale(event.target.value)}
+                        disabled={studioDisabled}
+                        className="dw-select peer"
+                      >
+                        {numberFormatOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
+                    </div>
+                    <p className="mt-2 dw-helper">
+                      Controls thousand and decimal separators across the dashboard.
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-foreground/60">
-                    Controls thousand and decimal separators across the dashboard.
-                  </p>
                 </div>
               </div>
             </div>
           ) : activeSection === 'profile' ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+            <div className="dw-card">
+              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     Profile
@@ -988,7 +990,7 @@ const SettingsPage = () => {
                     type="button"
                     onClick={handleProfileSave}
                     disabled={profileDisabled}
-                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="dw-btn dw-btn-md dw-btn-primary"
                   >
                     {savingProfile ? (
                       <span className="inline-flex items-center gap-2">
@@ -1001,7 +1003,8 @@ const SettingsPage = () => {
                   </button>
                 </div>
               </div>
-              <div className="mt-6 flex flex-wrap items-center gap-4">
+              <div className="dw-card-body space-y-6">
+                <div className="flex flex-wrap items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
                   {profileAvatarUrl ? (
                     <img
@@ -1021,13 +1024,13 @@ const SettingsPage = () => {
                   <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
                     {userName}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-foreground/60">
+                  <p className="dw-helper">
                     {userEmail}
                   </p>
                 </div>
                 <label
-                  className={`ml-auto inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 ${
-                    profileDisabled ? 'pointer-events-none opacity-60' : 'cursor-pointer'
+                  className={`ml-auto dw-btn dw-btn-md dw-btn-outline ${
+                    profileDisabled ? 'pointer-events-none opacity-60' : ''
                   }`}
                 >
                   {uploadingAvatar ? (
@@ -1050,37 +1053,38 @@ const SettingsPage = () => {
                     }}
                   />
                 </label>
-              </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    Display name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileDisplayName}
-                    onChange={(event) => setProfileDisplayName(event.target.value)}
-                    disabled={profileDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
-                  />
                 </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={profileEmail}
-                    onChange={(event) => setProfileEmail(event.target.value)}
-                    disabled={profileDisabled}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="dw-label">
+                      Display name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileDisplayName}
+                      onChange={(event) => setProfileDisplayName(event.target.value)}
+                      disabled={profileDisabled}
+                      className="mt-2 dw-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="dw-label">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={profileEmail}
+                      onChange={(event) => setProfileEmail(event.target.value)}
+                      disabled={profileDisabled}
+                      className="mt-2 dw-input"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
-              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur dark:border-border dark:bg-card/95">
+            <div className="dw-card">
+              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     Integration
@@ -1088,7 +1092,7 @@ const SettingsPage = () => {
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
                     Integrations
                   </h3>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-foreground/60">
+                  <p className="mt-2 dw-helper">
                     Supercharge your workflow using these integrations
                   </p>
                 </div>
@@ -1098,7 +1102,7 @@ const SettingsPage = () => {
                     type="button"
                     onClick={handleIntegrationsSave}
                     disabled={integrationsDisabled}
-                    className="rounded-full bg-primary px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="dw-btn dw-btn-lg dw-btn-primary"
                   >
                     {savingIntegrations ? (
                       <span className="inline-flex items-center gap-2">
@@ -1111,12 +1115,13 @@ const SettingsPage = () => {
                   </button>
                 </div>
               </div>
-              {error ? (
-                <p className="mt-4 text-sm text-rose-500">{error}</p>
-              ) : null}
-              <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-border dark:border-border dark:bg-card">
-                {integrations.map((item) => (
-                  <div key={item.id} className="px-5 py-4">
+              <div className="dw-card-body space-y-4">
+                {error ? (
+                  <p className="text-sm text-rose-500">{error}</p>
+                ) : null}
+                <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-border dark:border-border dark:bg-card">
+                  {integrations.map((item) => (
+                    <div key={item.id} className="px-5 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div
@@ -1128,7 +1133,7 @@ const SettingsPage = () => {
                           <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
                             {item.name}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-foreground/60">
+                          <p className="dw-helper">
                             {item.description}
                           </p>
                         </div>
@@ -1169,7 +1174,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
                           <label
                             htmlFor="stripe-secret-key"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Secret key
                           </label>
@@ -1189,7 +1194,7 @@ const SettingsPage = () => {
                                 integrationsDisabled ||
                                 (stripeHasSecret && !stripeKeyEditable)
                               }
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              className="dw-input pr-10"
                             />
                             {stripeHasSecret && !stripeKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1213,7 +1218,7 @@ const SettingsPage = () => {
                                 disabled={integrationsDisabled}
                                 aria-label={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
                                 title={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
                               >
                                 {stripeKeyEditable ? (
                                   <X className="h-4 w-4" />
@@ -1232,7 +1237,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="stripe-default-currency"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Default currency
                           </label>
@@ -1244,7 +1249,7 @@ const SettingsPage = () => {
                                 setStripeDefaultCurrency(event.target.value)
                               }
                               disabled={integrationsDisabled}
-                              className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              className="dw-select peer"
                             >
                               {stripeCurrencyOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -1259,7 +1264,7 @@ const SettingsPage = () => {
                           </p>
                         </div>
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-                          <span className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60">
+                          <span className="dw-label-inline">
                             Available balance
                           </span>
                           <input
@@ -1267,7 +1272,7 @@ const SettingsPage = () => {
                             value={stripeBalance}
                             disabled
                             readOnly
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-900 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input font-semibold text-slate-900"
                           />
                         </div>
                       </div>
@@ -1277,7 +1282,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
                           <label
                             htmlFor="gemini-api-key"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             API key
                           </label>
@@ -1296,7 +1301,7 @@ const SettingsPage = () => {
                               disabled={
                                 integrationsDisabled || (geminiHasKey && !geminiKeyEditable)
                               }
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              className="dw-input pr-10"
                             />
                             {geminiHasKey && !geminiKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1320,7 +1325,7 @@ const SettingsPage = () => {
                                 disabled={integrationsDisabled}
                                 aria-label={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
                                 title={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
                               >
                                 {geminiKeyEditable ? (
                                   <X className="h-4 w-4" />
@@ -1340,7 +1345,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-model"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Model
                           </label>
@@ -1350,7 +1355,7 @@ const SettingsPage = () => {
                               value={geminiModel}
                               onChange={(event) => setGeminiModel(event.target.value)}
                               disabled={integrationsDisabled}
-                              className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              className="dw-select peer"
                             >
                               {geminiModelOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -1369,7 +1374,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-temperature"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Temperature
                           </label>
@@ -1385,7 +1390,7 @@ const SettingsPage = () => {
                               setGeminiTemperature(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Higher values make output more creative (0–2).
@@ -1395,7 +1400,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-max-tokens"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Max output tokens
                           </label>
@@ -1410,7 +1415,7 @@ const SettingsPage = () => {
                               setGeminiMaxTokens(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Limits how long responses can be.
@@ -1420,7 +1425,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-safety"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Safety
                           </label>
@@ -1434,7 +1439,7 @@ const SettingsPage = () => {
                                 label="Enable Gemini safety"
                                 disabled={integrationsDisabled}
                               />
-                              <span className="text-xs text-slate-500 dark:text-foreground/60">
+                              <span className="dw-helper">
                                 {geminiSafetyEnabled ? 'On' : 'Off'}
                               </span>
                             </div>
@@ -1451,7 +1456,7 @@ const SettingsPage = () => {
                                   setGeminiSafetyEnabled(true);
                                 }}
                                 disabled={integrationsDisabled || !geminiSafetyEnabled}
-                                className="peer h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                                className="dw-select peer"
                               >
                                 {GEMINI_SAFETY_OPTIONS.map((option) => (
                                   <option key={option.value} value={option.value}>
@@ -1471,7 +1476,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-system-prompt"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             System prompt
                           </label>
@@ -1482,7 +1487,7 @@ const SettingsPage = () => {
                             value={geminiSystemPrompt}
                             onChange={(event) => setGeminiSystemPrompt(event.target.value)}
                             disabled={integrationsDisabled}
-                            className="min-h-[96px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-textarea min-h-[96px]"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Applied to every request as a base instruction.
@@ -1490,7 +1495,7 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-                          <span className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60">
+                          <span className="dw-label-inline">
                             Streaming
                           </span>
                           <div className="flex items-center gap-3">
@@ -1500,7 +1505,7 @@ const SettingsPage = () => {
                               label="Enable Gemini streaming"
                               disabled={integrationsDisabled}
                             />
-                            <span className="text-xs text-slate-500 dark:text-foreground/60">
+                            <span className="dw-helper">
                               {geminiStreaming ? 'On' : 'Off'}
                             </span>
                           </div>
@@ -1512,7 +1517,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-timeout"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Timeout (sec)
                           </label>
@@ -1527,7 +1532,7 @@ const SettingsPage = () => {
                               setGeminiTimeoutSec(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Maximum time to wait for a response.
@@ -1537,7 +1542,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-retry"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Retry count
                           </label>
@@ -1552,7 +1557,7 @@ const SettingsPage = () => {
                               setGeminiRetryCount(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Number of automatic retries on failure.
@@ -1562,7 +1567,7 @@ const SettingsPage = () => {
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
                           <label
                             htmlFor="gemini-credit-alert"
-                            className="text-sm font-semibold text-slate-500 md:flex md:h-10 md:items-center dark:text-foreground/60"
+                            className="dw-label-inline"
                           >
                             Credits alert threshold
                           </label>
@@ -1577,7 +1582,7 @@ const SettingsPage = () => {
                               setCreditAlertThreshold(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Sends a bell notification when credits fall below this
@@ -1604,7 +1609,7 @@ const SettingsPage = () => {
                                 integrationsDisabled ||
                                 (deviantHasSecret && !deviantKeyEditable)
                               }
-                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                              className="dw-input pr-10"
                             />
                             {deviantHasSecret && !deviantKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1633,7 +1638,7 @@ const SettingsPage = () => {
                                 deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'
                               }
                               title={deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'}
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-background dark:text-foreground/70"
+                              className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
                             >
                               {deviantKeyEditable ? (
                                 <X className="h-4 w-4" />
@@ -1658,7 +1663,7 @@ const SettingsPage = () => {
                               integrationsDisabled ||
                               (deviantHasSecret && !deviantKeyEditable)
                             }
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:placeholder-slate-400 disabled:border-slate-300 disabled:opacity-60 dark:disabled:bg-slate-900 dark:disabled:text-foreground/30 dark:disabled:border-slate-700 dark:border-border dark:bg-background dark:text-foreground"
+                            className="dw-input pr-10"
                           />
                           {deviantHasSecret && !deviantKeyEditable ? (
                             <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1667,7 +1672,8 @@ const SettingsPage = () => {
                       </div>
                     ) : null}
                   </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -55,7 +55,7 @@ const Stats = ({
     },
   ];
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <section className="dw-card dw-card-body">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
@@ -67,7 +67,7 @@ const Stats = ({
         </div>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 dark:hover:bg-card/80"
+          className="flex items-center gap-2 dw-btn dw-btn-sm dw-btn-outline"
         >
           Monthly
           <ChevronDown className="h-4 w-4" />

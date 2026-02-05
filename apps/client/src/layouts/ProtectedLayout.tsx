@@ -85,6 +85,7 @@ const ProtectedLayout = () => {
 
   const numberFormatLocale = studioQuery.data?.numberFormatLocale ?? 'en-US';
   const creditAlertThreshold = studioQuery.data?.creditAlertThreshold ?? 200;
+  const aiCredits = studioQuery.data?.aiCredits;
   const stripeDefaultCurrency = normalizeCurrency(
     integrationQuery.data?.stripe.defaultCurrency,
   );
@@ -138,8 +139,8 @@ const ProtectedLayout = () => {
     <StudioProvider value={contextValue}>
       <DashboardLayout
         projectTitle="DreamWeaverComics Studio"
-        credits={1240}
-        creditsLoading={false}
+        credits={aiCredits ?? 0}
+        creditsLoading={studioQuery.isLoading && !studioQuery.data}
         creditAlertThreshold={creditAlertThreshold}
         numberLocale={numberFormatLocale}
         stripeBalance={stripeBalanceDisplay}

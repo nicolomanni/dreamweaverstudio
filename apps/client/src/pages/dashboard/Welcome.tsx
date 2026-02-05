@@ -2,7 +2,7 @@ import { PlayCircle } from 'lucide-react';
 
 const Welcome = () => {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <div className="dw-card dw-card-body">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-foreground/60">
@@ -16,7 +16,7 @@ const Welcome = () => {
             next release window is ready for QA.
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition-colors duration-200 hover:bg-primary/90">
+        <button className="dw-btn dw-btn-md dw-btn-primary shadow-sm">
           <PlayCircle className="h-4 w-4" />
           Studio HQ
         </button>

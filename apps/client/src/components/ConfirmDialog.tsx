@@ -48,7 +48,7 @@ export const ConfirmDialog = ({
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
     >
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-border dark:bg-card">
+      <div className="dw-card w-full max-w-md overflow-hidden shadow-2xl">
         <div className="flex items-start gap-3 px-5 py-4">
           <span
             className={`flex h-10 w-10 items-center justify-center rounded-full border ${toneStyles[tone]}`}
@@ -70,7 +70,7 @@ export const ConfirmDialog = ({
             type="button"
             onClick={onCancel}
             aria-label="Close dialog"
-            className="text-slate-400 transition-colors hover:text-slate-600 dark:text-foreground/40 dark:hover:text-foreground/70"
+            className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-ghost"
           >
             <X className="h-4 w-4" />
           </button>
@@ -79,14 +79,14 @@ export const ConfirmDialog = ({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground/70 dark:hover:bg-background"
+            className="dw-btn dw-btn-md dw-btn-outline"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition-colors ${confirmButtonStyles[tone]}`}
+            className={`dw-btn dw-btn-md ${confirmButtonStyles[tone]}`}
           >
             {confirmLabel}
           </button>

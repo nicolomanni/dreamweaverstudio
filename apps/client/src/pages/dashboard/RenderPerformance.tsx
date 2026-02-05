@@ -14,7 +14,7 @@ const RenderPerformance = ({ locale = 'en-US' }: RenderPerformanceProps) => {
   ];
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <section className="dw-card dw-card-body">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
           Top regions

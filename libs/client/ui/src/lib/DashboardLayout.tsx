@@ -94,6 +94,9 @@ export function DashboardLayout({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -183,6 +186,29 @@ export function DashboardLayout({
       return prev.map((item) => (item.read ? item : { ...item, read: true }));
     });
   }, [isNotificationsOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (isSearchOpen && searchRef.current && !searchRef.current.contains(target)) {
+        setIsSearchOpen(false);
+      }
+      if (
+        isNotificationsOpen &&
+        notificationsRef.current &&
+        !notificationsRef.current.contains(target)
+      ) {
+        setIsNotificationsOpen(false);
+      }
+      if (isUserMenuOpen && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen, isNotificationsOpen, isUserMenuOpen]);
 
 
   const toggleTheme = () => {
@@ -349,7 +375,7 @@ export function DashboardLayout({
               type="button"
               aria-label="Close navigation"
               onClick={() => setIsSidebarOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 dark:border-border dark:bg-card dark:text-foreground/80"
+              className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
             >
               <X className="h-5 w-5" />
             </button>
@@ -407,7 +433,7 @@ export function DashboardLayout({
             </div>
           </div>
           <div className="px-4 pb-6">
-            <div className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 dark:border-border dark:bg-background dark:text-foreground/60">
+            <div className="dw-card-muted flex w-full items-center justify-center px-3 py-2 text-xs font-semibold text-slate-500 dark:text-foreground/60">
               Dashboard v{__APP_VERSION__}
             </div>
           </div>
@@ -428,7 +454,7 @@ export function DashboardLayout({
                     return next;
                   })
                 }
-                className="hidden h-10 w-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80 lg:flex"
+                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost hidden lg:inline-flex"
               >
                 <ChevronLeft
                   className={`text-xl transition-transform ${
@@ -440,46 +466,48 @@ export function DashboardLayout({
                 type="button"
                 aria-label="Open navigation"
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80 lg:hidden"
+                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost lg:hidden"
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <button
-                type="button"
-                aria-label="Search"
-                onClick={() => setIsSearchOpen((open) => !open)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-              {isSearchOpen ? (
-                <div className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-[320px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-border dark:bg-card">
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
-                    <Search className="h-4 w-4" />
-                    <input
-                      type="search"
-                      placeholder="Search..."
-                      className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-foreground dark:placeholder:text-foreground/40"
-                    />
+              <div ref={searchRef} className="relative">
+                <button
+                  type="button"
+                  aria-label="Search"
+                  onClick={() => setIsSearchOpen((open) => !open)}
+                  className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                {isSearchOpen ? (
+                  <div className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-[320px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-border dark:bg-card">
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
+                      <Search className="h-4 w-4" />
+                      <input
+                        type="search"
+                        placeholder="Search..."
+                        className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-foreground dark:placeholder:text-foreground/40"
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80"
+                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
               >
                 {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
-              <div className="relative">
+              <div ref={notificationsRef} className="relative">
                 <button
                   type="button"
                   aria-label="Notifications"
                   onClick={() => setIsNotificationsOpen((open) => !open)}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80"
+                  className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost relative"
                 >
                   {unreadCount > 0 ? (
                     <span className="absolute right-2 top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full border-2 border-white bg-rose-500 px-1 text-[10px] font-semibold text-white dark:border-black">
@@ -497,8 +525,11 @@ export function DashboardLayout({
                       {notifications.length > 0 ? (
                         <button
                           type="button"
-                          onClick={() => setNotifications([])}
-                          className="text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:text-foreground/60 dark:hover:text-foreground"
+                          onClick={() => {
+                            setNotifications([]);
+                            setIsNotificationsOpen(false);
+                          }}
+                          className="dw-btn dw-btn-sm dw-btn-ghost normal-case tracking-normal"
                         >
                           Clear
                         </button>
@@ -513,6 +544,7 @@ export function DashboardLayout({
                         notifications.map((item) => (
                           <div
                             key={item.id}
+                            onClick={() => setIsNotificationsOpen(false)}
                             className="border-b border-slate-100 px-4 py-3 last:border-b-0 dark:border-border"
                           >
                             <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
@@ -534,7 +566,7 @@ export function DashboardLayout({
               <Link
                 to="/settings"
                 aria-label="Settings"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-foreground/70 dark:hover:bg-card/80"
+                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
               >
                 <Settings className="h-5 w-5" />
               </Link>
@@ -579,12 +611,12 @@ export function DashboardLayout({
                   </div>
                 </div>
               </div>
-              <div className="relative">
+              <div ref={userMenuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen((open) => !open)}
                   aria-label="Open user menu"
-                  className="flex cursor-pointer items-center gap-2 rounded-full bg-white px-1 py-1 text-sm text-slate-700 transition-colors duration-200 hover:bg-slate-100 dark:bg-card dark:text-foreground/80 dark:hover:text-foreground"
+                  className="dw-btn dw-btn-md dw-btn-ghost normal-case tracking-normal bg-white px-2 text-slate-700 hover:bg-slate-100 dark:bg-card dark:text-foreground/80 dark:hover:bg-background/80"
                 >
                   {userAvatarUrl ? (
                     <img
@@ -616,7 +648,8 @@ export function DashboardLayout({
                     <Link
                       to="/settings"
                       hash="profile"
-                      className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-foreground/80 dark:hover:bg-background/70"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="dw-menu-item"
                     >
                       <User className="h-4 w-4" />
                       Profile
@@ -624,7 +657,7 @@ export function DashboardLayout({
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-foreground/80 dark:hover:bg-background/70"
+                      className="dw-menu-item"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout

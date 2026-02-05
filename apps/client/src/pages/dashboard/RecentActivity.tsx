@@ -13,7 +13,7 @@ const RecentActivity = ({
   const creditsTopUp = formatNumber(1200, locale);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <div className="dw-card dw-card-body">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
@@ -23,7 +23,7 @@ const RecentActivity = ({
             Studio Timeline
           </h3>
         </div>
-        <span className="text-xs text-slate-500 dark:text-foreground/60">
+        <span className="dw-helper">
           Last 24h
         </span>
       </div>

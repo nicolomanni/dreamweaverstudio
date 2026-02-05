@@ -83,7 +83,7 @@ const ForgotPasswordForm: React.FC = () => {
       </div>
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label htmlFor="email-address" className="text-xs text-foreground/70">
+          <label htmlFor="email-address" className="dw-label">
             Email
           </label>
           <input
@@ -95,7 +95,7 @@ const ForgotPasswordForm: React.FC = () => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={isSubmitting}
-            className="w-full rounded-lg border border-input bg-background/70 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="dw-input"
             placeholder="name@example.com"
           />
         </div>
@@ -103,7 +103,7 @@ const ForgotPasswordForm: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors duration-200 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dw-btn dw-btn-md dw-btn-primary w-full"
         >
           {isSubmitting ? 'Sending...' : 'Send reset link'}
         </button>

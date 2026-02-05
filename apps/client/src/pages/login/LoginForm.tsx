@@ -66,7 +66,7 @@ const LoginForm: React.FC = () => {
         <div className="space-y-2">
           <label
             htmlFor="email-address"
-            className="text-xs text-foreground/70"
+            className="dw-label"
           >
             Email
           </label>
@@ -79,12 +79,12 @@ const LoginForm: React.FC = () => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={isSubmitting}
-            className="w-full rounded-lg border border-input bg-card/90 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="dw-input"
             placeholder="name@example.com"
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="password" className="text-xs text-foreground/70">
+          <label htmlFor="password" className="dw-label">
             Password
           </label>
           <input
@@ -95,7 +95,7 @@ const LoginForm: React.FC = () => {
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-lg border border-input bg-card/90 px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="dw-input"
             placeholder="••••••••"
             disabled={isSubmitting}
           />
@@ -134,7 +134,7 @@ const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors duration-200 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dw-btn dw-btn-md dw-btn-primary w-full"
         >
           {isSubmitting ? 'Signing in...' : 'Sign In'}
         </button>
@@ -151,7 +151,7 @@ const LoginForm: React.FC = () => {
           type="button"
           onClick={handleGoogle}
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-card/80 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dw-btn dw-btn-md dw-btn-outline w-full justify-center gap-3"
         >
           <FontAwesomeIcon icon={faGoogle} />
           Sign in with Google

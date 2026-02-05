@@ -6,7 +6,7 @@ type RenderQueueProps = {
 
 const RenderQueue = ({ locale = 'en-US' }: RenderQueueProps) => {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+    <div className="dw-card dw-card-body">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
@@ -18,7 +18,7 @@ const RenderQueue = ({ locale = 'en-US' }: RenderQueueProps) => {
         </div>
         <button
           type="button"
-          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:bg-white dark:border-border dark:bg-background dark:text-foreground/70 dark:hover:bg-card/80"
+          className="dw-btn dw-btn-sm dw-btn-outline"
         >
           View all
         </button>

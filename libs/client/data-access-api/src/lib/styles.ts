@@ -19,7 +19,14 @@ async function parseJson<T>(response: Response, message: string): Promise<T> {
     throw new Error('unauthorized');
   }
   if (!response.ok) {
-    throw new Error(message);
+    let detail: string | undefined;
+    try {
+      const data = await response.json();
+      detail = data?.message || data?.error;
+    } catch {
+      detail = undefined;
+    }
+    throw new Error(detail ? `${message}: ${detail}` : message);
   }
   return response.json();
 }
@@ -161,4 +168,22 @@ export async function generateStylePreview(input: {
     body: JSON.stringify(input),
   });
   return parseJson(response, 'Failed to generate style preview');
+}
+
+export async function uploadStylePreviewImage(input: {
+  dataUrl: string;
+  styleKey: string;
+  styleId?: string;
+  promptHash?: string;
+}): Promise<{ url: string }> {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(await getAuthHeader()),
+  };
+  const response = await request(buildUrl('/styles/preview/upload'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(input),
+  });
+  return parseJson(response, 'Failed to upload preview image');
 }
