@@ -12,11 +12,17 @@ import Login from './pages/login';
 import Dashboard from './pages/dashboard';
 import ForgotPasswordPage from './pages/forgot-password';
 import SettingsPage from './pages/settings';
+import StylesListPage from './pages/styles';
+import StyleCreatePage from './pages/styles/new';
+import StyleDetailPage from './pages/styles/detail';
 import { getAuthState } from './auth';
 import { subscribeLoading } from '@dreamweaverstudio/client-data-access-api';
+import ProtectedLayout from './layouts/ProtectedLayout';
+
+const selectIsLoading = (state: { isLoading: boolean }) => state.isLoading;
 
 const RootLayout = () => {
-  const isLoading = useRouterState({ select: (state) => state.isLoading });
+  const isLoading = useRouterState({ select: selectIsLoading });
   const [apiLoading, setApiLoading] = useState(false);
   const [loaderVisible, setLoaderVisible] = useState(false);
   const startRef = useRef<number | null>(null);
@@ -91,6 +97,18 @@ const rootRoute = createRootRoute({
   component: RootLayout,
 });
 
+const protectedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'protected',
+  component: ProtectedLayout,
+  beforeLoad: async () => {
+    const user = await getAuthState();
+    if (!user) {
+      throw redirect({ to: '/' });
+    }
+  },
+});
+
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -104,15 +122,9 @@ const loginRoute = createRoute({
 });
 
 const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => protectedRoute,
   path: '/dashboard',
   component: Dashboard,
-  beforeLoad: async () => {
-    const user = await getAuthState();
-    if (!user) {
-      throw redirect({ to: '/' });
-    }
-  },
 });
 
 const forgotPasswordRoute = createRoute({
@@ -122,22 +134,39 @@ const forgotPasswordRoute = createRoute({
 });
 
 const settingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => protectedRoute,
   path: '/settings',
   component: SettingsPage,
-  beforeLoad: async () => {
-    const user = await getAuthState();
-    if (!user) {
-      throw redirect({ to: '/' });
-    }
-  },
+});
+
+const stylesRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/styles',
+  component: StylesListPage,
+});
+
+const stylesNewRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/styles/new',
+  component: StyleCreatePage,
+});
+
+const stylesDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/styles/$styleId',
+  component: StyleDetailPage,
 });
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  dashboardRoute,
   forgotPasswordRoute,
-  settingsRoute,
+  protectedRoute.addChildren([
+    dashboardRoute,
+    settingsRoute,
+    stylesRoute,
+    stylesNewRoute,
+    stylesDetailRoute,
+  ]),
 ]);
 
 export const router = createRouter({ routeTree });

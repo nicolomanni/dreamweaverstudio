@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DashboardLayout } from '@dreamweaverstudio/client-ui';
 import {
   fetchIntegrationSettings,
   fetchStripeBalance,
@@ -13,8 +12,9 @@ import {
   firebaseApp,
   type IntegrationSettingsResponse,
 } from '@dreamweaverstudio/client-data-access-api';
-import { onAuthChange, signOutUser } from '../../auth';
-import { useNavigate } from '@tanstack/react-router';
+import { signOutUser } from '../../auth';
+import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   ChevronDown,
@@ -29,6 +29,7 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { formatCurrency, normalizeCurrency } from '../../utils/currency';
+import { useAuthUser } from '../../hooks/useAuthUser';
 
 const STRIPE_CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD - US Dollar' },
@@ -143,17 +144,14 @@ const UnsavedBadge = ({ show }: { show: boolean }) =>
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<
     'general' | 'profile' | 'integrations'
   >('general');
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeHasSecret, setStripeHasSecret] = useState(false);
-  const [stripeBalanceAmount, setStripeBalanceAmount] = useState<number | null>(
-    null,
-  );
-  const [stripeBalanceLoading, setStripeBalanceLoading] = useState(true);
   const [stripeKeyEditable, setStripeKeyEditable] = useState(true);
   const [stripeDefaultCurrency, setStripeDefaultCurrency] = useState('USD');
   const [geminiEnabled, setGeminiEnabled] = useState(false);
@@ -224,12 +222,49 @@ const SettingsPage = () => {
     deviantClientId: string;
     deviantClientSecret: string;
   } | null>(null);
-  const [userName, setUserName] = useState('DreamWeaver User');
-  const [userEmail, setUserEmail] = useState('user@dreamweaver.studio');
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>();
   const [profileDisplayName, setProfileDisplayName] = useState('DreamWeaver User');
   const [profileEmail, setProfileEmail] = useState('user@dreamweaver.studio');
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | undefined>();
+  const { user } = useAuthUser();
+  const hasUser = Boolean(user);
+  const userName = user?.displayName || user?.email || 'DreamWeaver User';
+  const userEmail = user?.email || 'user@dreamweaver.studio';
+
+  const integrationsQuery = useQuery({
+    queryKey: ['integrationSettings'],
+    queryFn: fetchIntegrationSettings,
+  });
+
+  const studioQuery = useQuery({
+    queryKey: ['studioSettings'],
+    queryFn: fetchStudioSettings,
+  });
+
+  const profileQuery = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: fetchUserProfile,
+    enabled: hasUser,
+  });
+
+  const stripeBalanceQuery = useQuery({
+    queryKey: ['stripeBalance'],
+    queryFn: fetchStripeBalance,
+    enabled: integrationsQuery.data?.stripe.enabled === true,
+    staleTime: 60 * 1000,
+  });
+
+  const loading =
+    integrationsQuery.isLoading ||
+    studioQuery.isLoading ||
+    profileQuery.isLoading;
+
+  const stripeBalanceAmount =
+    integrationsQuery.data?.stripe.enabled &&
+    stripeBalanceQuery.data?.enabled &&
+    stripeBalanceQuery.data.available !== undefined
+      ? stripeBalanceQuery.data.available
+      : null;
+
 
   const MASKED_VALUE = '••••••••';
   const stripeActive = stripeEnabled && stripeHasSecret;
@@ -358,165 +393,126 @@ const SettingsPage = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const applyHash = () => {
-      const resolved = resolveSectionFromHash(window.location.hash);
-      setActiveSection(resolved);
-      if (!window.location.hash) {
-        window.location.hash = resolved;
-      }
-    };
-    applyHash();
-    window.addEventListener('hashchange', applyHash);
-    return () => window.removeEventListener('hashchange', applyHash);
-  }, []);
+    if (!location.pathname.startsWith('/settings')) {
+      return;
+    }
+    const hash = location.hash ?? '';
+    const resolved = resolveSectionFromHash(hash);
+    setActiveSection((prev) => (prev === resolved ? prev : resolved));
+    if (!hash) {
+      const { pathname, search } = window.location;
+      window.history.replaceState(null, '', `${pathname}${search}#${resolved}`);
+    }
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const settings = await fetchIntegrationSettings();
-        if (!mounted) return;
-        setStripeEnabled(settings.stripe.enabled);
-        setStripeHasSecret(settings.stripe.hasSecret);
-        const stripeMasked = settings.stripe.hasSecret ? MASKED_VALUE : '';
-        setStripeSecret(stripeMasked);
-        setStripeKeyEditable(!settings.stripe.hasSecret);
-        const stripeCurrency = normalizeCurrency(settings.stripe.defaultCurrency);
-        setStripeDefaultCurrency(stripeCurrency);
-        const geminiState = applyGeminiSettings(settings.gemini);
-        setDeviantEnabled(settings.deviantArt.enabled);
-        setDeviantHasSecret(settings.deviantArt.hasSecret);
-        const deviantMasked = settings.deviantArt.hasSecret ? MASKED_VALUE : '';
-        setDeviantClientId(deviantMasked);
-        setDeviantClientSecret(deviantMasked);
-        setDeviantKeyEditable(!settings.deviantArt.hasSecret);
-        setInitialIntegrations({
-          stripeEnabled: settings.stripe.enabled,
-          stripeSecret: stripeMasked,
-          stripeDefaultCurrency: stripeCurrency,
-          geminiEnabled: geminiState.enabled,
-          geminiKey: geminiState.masked,
-          geminiModel: geminiState.model,
-          geminiTemperature: geminiState.temperature,
-          geminiMaxTokens: geminiState.maxOutputTokens,
-          geminiSafetyEnabled: geminiState.safetyEnabled,
-          geminiSafetyPreset: geminiState.safetyPreset,
-          geminiSystemPrompt: geminiState.systemPrompt,
-          geminiStreaming: geminiState.streaming,
-          geminiTimeoutSec: geminiState.timeoutSec,
-          geminiRetryCount: geminiState.retryCount,
-          deviantEnabled: settings.deviantArt.enabled,
-          deviantClientId: deviantMasked,
-          deviantClientSecret: deviantMasked,
-        });
-        if (settings.stripe.enabled) {
-          setStripeBalanceLoading(true);
-          try {
-            const balance = await fetchStripeBalance();
-            if (mounted && balance.enabled && balance.available !== undefined) {
-              setStripeBalanceAmount(balance.available);
-            }
-          } finally {
-            if (mounted) setStripeBalanceLoading(false);
-          }
-        } else {
-          setStripeBalanceAmount(null);
-          setStripeBalanceLoading(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          if (await handleUnauthorized(err)) return;
+    const settings = integrationsQuery.data;
+    if (!settings || isIntegrationsDirty) return;
+    setStripeEnabled(settings.stripe.enabled);
+    setStripeHasSecret(settings.stripe.hasSecret);
+    const stripeMasked = settings.stripe.hasSecret ? MASKED_VALUE : '';
+    setStripeSecret(stripeMasked);
+    setStripeKeyEditable(!settings.stripe.hasSecret);
+    const stripeCurrency = normalizeCurrency(settings.stripe.defaultCurrency);
+    setStripeDefaultCurrency(stripeCurrency);
+    const geminiState = applyGeminiSettings(settings.gemini);
+    setDeviantEnabled(settings.deviantArt.enabled);
+    setDeviantHasSecret(settings.deviantArt.hasSecret);
+    const deviantMasked = settings.deviantArt.hasSecret ? MASKED_VALUE : '';
+    setDeviantClientId(deviantMasked);
+    setDeviantClientSecret(deviantMasked);
+    setDeviantKeyEditable(!settings.deviantArt.hasSecret);
+    setInitialIntegrations({
+      stripeEnabled: settings.stripe.enabled,
+      stripeSecret: stripeMasked,
+      stripeDefaultCurrency: stripeCurrency,
+      geminiEnabled: geminiState.enabled,
+      geminiKey: geminiState.masked,
+      geminiModel: geminiState.model,
+      geminiTemperature: geminiState.temperature,
+      geminiMaxTokens: geminiState.maxOutputTokens,
+      geminiSafetyEnabled: geminiState.safetyEnabled,
+      geminiSafetyPreset: geminiState.safetyPreset,
+      geminiSystemPrompt: geminiState.systemPrompt,
+      geminiStreaming: geminiState.streaming,
+      geminiTimeoutSec: geminiState.timeoutSec,
+      geminiRetryCount: geminiState.retryCount,
+      deviantEnabled: settings.deviantArt.enabled,
+      deviantClientId: deviantMasked,
+      deviantClientSecret: deviantMasked,
+    });
+  }, [integrationsQuery.data, isIntegrationsDirty]);
+
+  useEffect(() => {
+    if (integrationsQuery.error) {
+      void handleUnauthorized(integrationsQuery.error).then((handled) => {
+        if (!handled) {
           setError('Unable to load integration settings.');
         }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      });
+    }
+  }, [integrationsQuery.error]);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
-      if (!user) return;
-      setUserName(user.displayName || user.email || 'DreamWeaver User');
-      setUserEmail(user.email || 'user@dreamweaver.studio');
-      setUserAvatarUrl(user.photoURL || undefined);
+    if (!user || isProfileDirty) return;
+    if (!profileQuery.data) {
       setProfileDisplayName(user.displayName || user.email || 'DreamWeaver User');
       setProfileEmail(user.email || 'user@dreamweaver.studio');
       setProfileAvatarUrl(user.photoURL || undefined);
-    });
-    return () => unsubscribe();
-  }, []);
+    }
+  }, [user, profileQuery.data, isProfileDirty]);
 
   useEffect(() => {
-    let mounted = true;
-    const loadSettings = async () => {
-      try {
-        const studio = await fetchStudioSettings();
-        if (mounted) {
-          setStudioDisplayName(studio.displayName);
-          setStudioEmail(studio.email);
-          setStudioName(studio.studioName);
-          setStudioTimezone(studio.timezone);
-          setNumberFormatLocale(studio.numberFormatLocale ?? 'en-US');
-          setCreditAlertThreshold(studio.creditAlertThreshold ?? 200);
-          setInitialStudio({
-            displayName: studio.displayName,
-            email: studio.email,
-            studioName: studio.studioName,
-            timezone: studio.timezone,
-            numberFormatLocale: studio.numberFormatLocale ?? 'en-US',
-            creditAlertThreshold: studio.creditAlertThreshold ?? 200,
-          });
-        }
-      } catch (err) {
-        if (mounted) {
-          if (await handleUnauthorized(err)) return;
+    const studio = studioQuery.data;
+    if (!studio || isStudioDirty) return;
+    setStudioDisplayName(studio.displayName);
+    setStudioEmail(studio.email);
+    setStudioName(studio.studioName);
+    setStudioTimezone(studio.timezone);
+    setNumberFormatLocale(studio.numberFormatLocale ?? 'en-US');
+    setCreditAlertThreshold(studio.creditAlertThreshold ?? 200);
+    setInitialStudio({
+      displayName: studio.displayName,
+      email: studio.email,
+      studioName: studio.studioName,
+      timezone: studio.timezone,
+      numberFormatLocale: studio.numberFormatLocale ?? 'en-US',
+      creditAlertThreshold: studio.creditAlertThreshold ?? 200,
+    });
+  }, [studioQuery.data, isStudioDirty]);
+
+  useEffect(() => {
+    if (studioQuery.error) {
+      void handleUnauthorized(studioQuery.error).then((handled) => {
+        if (!handled) {
           setError('Unable to load studio settings.');
         }
-      }
-    };
-    loadSettings();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      });
+    }
+  }, [studioQuery.error]);
 
   useEffect(() => {
-    let mounted = true;
-    const loadProfile = async () => {
-      if (!userEmail) return;
-      try {
-        const profile = await fetchUserProfile();
-        if (!mounted || !profile) return;
-        setProfileDisplayName(profile.displayName);
-        setProfileEmail(profile.email);
-        setProfileAvatarUrl(profile.avatarUrl);
-        setInitialProfile({
-          displayName: profile.displayName,
-          email: profile.email,
-          avatarUrl: profile.avatarUrl,
-        });
-      } catch (err) {
-        if (mounted) {
-          if (await handleUnauthorized(err)) return;
+    const profile = profileQuery.data;
+    if (!profile || isProfileDirty) return;
+    setProfileDisplayName(profile.displayName);
+    setProfileEmail(profile.email);
+    setProfileAvatarUrl(profile.avatarUrl);
+    setInitialProfile({
+      displayName: profile.displayName,
+      email: profile.email,
+      avatarUrl: profile.avatarUrl,
+    });
+  }, [profileQuery.data, isProfileDirty]);
+
+  useEffect(() => {
+    if (profileQuery.error) {
+      void handleUnauthorized(profileQuery.error).then((handled) => {
+        if (!handled) {
           setError('Unable to load user profile.');
         }
-      }
-    };
-    loadProfile();
-    return () => {
-      mounted = false;
-    };
-  }, [userEmail]);
-
-  const handleLogout = async () => {
-    await signOutUser();
-    await navigate({ to: '/' });
-  };
+      });
+    }
+  }, [profileQuery.error]);
 
   const handleUnauthorized = async (err: unknown) => {
     if (err instanceof Error && err.message === 'unauthorized') {
@@ -629,6 +625,12 @@ const SettingsPage = () => {
       setDeviantClientSecret(deviantMasked);
       setDeviantKeyEditable(!deviant.hasSecret);
 
+      queryClient.setQueryData(['integrationSettings'], {
+        stripe,
+        gemini,
+        deviantArt: deviant,
+      });
+
       if (creditAlertDirty) {
         const updatedStudio = await updateStudioSettings({
           creditAlertThreshold,
@@ -639,6 +641,7 @@ const SettingsPage = () => {
         setInitialStudio((prev) =>
           prev ? { ...prev, creditAlertThreshold: nextThreshold } : prev,
         );
+        queryClient.setQueryData(['studioSettings'], updatedStudio);
       }
 
       setInitialIntegrations({
@@ -664,18 +667,7 @@ const SettingsPage = () => {
       });
 
       if (stripe.enabled && stripe.hasSecret) {
-        setStripeBalanceLoading(true);
-        try {
-          const balance = await fetchStripeBalance();
-          if (balance.enabled && balance.available !== undefined) {
-            setStripeBalanceAmount(balance.available);
-          }
-        } finally {
-          setStripeBalanceLoading(false);
-        }
-      } else {
-        setStripeBalanceAmount(null);
-        setStripeBalanceLoading(false);
+        queryClient.invalidateQueries({ queryKey: ['stripeBalance'] });
       }
       pushToast('success', 'Integrations updated successfully.');
     } catch (err) {
@@ -714,6 +706,7 @@ const SettingsPage = () => {
         creditAlertThreshold:
           updated.creditAlertThreshold ?? creditAlertThreshold,
       });
+      queryClient.setQueryData(['studioSettings'], updated);
       pushToast('success', 'Studio settings saved.');
     } catch (err) {
       if (await handleUnauthorized(err)) return;
@@ -741,6 +734,7 @@ const SettingsPage = () => {
         email: updated.email,
         avatarUrl: updated.avatarUrl,
       });
+      queryClient.setQueryData(['userProfile'], updated);
       pushToast('success', 'Profile updated successfully.');
     } catch (err) {
       if (await handleUnauthorized(err)) return;
@@ -814,20 +808,7 @@ const SettingsPage = () => {
   ];
 
   return (
-    <DashboardLayout
-      projectTitle="DreamWeaverComics Studio"
-      credits={1240}
-      creditsLoading={loading}
-      creditAlertThreshold={creditAlertThreshold}
-      numberLocale={numberFormatLocale}
-      stripeBalance={stripeBalance}
-      stripeBalanceLoading={stripeBalanceLoading}
-      activeNav="settings"
-      onLogout={handleLogout}
-      userName={userName}
-      userEmail={userEmail}
-      userAvatarUrl={userAvatarUrl}
-    >
+    <>
       <div className="pointer-events-none fixed right-6 top-6 z-50 flex flex-col gap-3">
         {toasts.map((toast) => (
           <div
@@ -1692,7 +1673,7 @@ const SettingsPage = () => {
           )}
         </div>
       </section>
-    </DashboardLayout>
+    </>
   );
 };
 

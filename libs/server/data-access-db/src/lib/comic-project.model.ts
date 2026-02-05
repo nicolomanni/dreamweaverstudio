@@ -62,6 +62,7 @@ const ComicProjectSchema = new Schema<ComicProject>(
       enum: ['draft', 'in-progress', 'completed'],
       default: 'draft',
     },
+    styleId: { type: String },
     pages: { type: [PageSchema], default: [] },
     coverImageUrl: { type: String },
     tags: { type: [String], default: [] },

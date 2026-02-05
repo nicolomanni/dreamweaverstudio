@@ -29,6 +29,7 @@ const createProjectSchema = z.object({
   title: z.string().min(1),
   synopsis: z.string().optional(),
   status: z.enum(['draft', 'in-progress', 'completed']).optional(),
+  styleId: z.string().optional(),
   pages: z.array(pageSchema).default([]),
   coverImageUrl: z.string().url().optional(),
   tags: z.array(z.string()).optional(),

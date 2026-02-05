@@ -1,46 +1,39 @@
-import { useEffect, useState } from 'react';
 import {
   BookOpen,
   Coins,
   Layers,
   ChevronDown,
 } from 'lucide-react';
-import { fetchStripeBalance } from '@dreamweaverstudio/client-data-access-api';
 import { formatCurrency, formatNumber } from '../../utils/currency';
 
 type StatsProps = {
   currency?: string;
   locale?: string;
+  stripeBalanceAmount?: number | null;
+  stripeBalanceLive?: boolean;
+  stripeBalanceLoading?: boolean;
 };
 
-const Stats = ({ currency = 'USD', locale = 'en-US' }: StatsProps) => {
-  const [stripeAmount, setStripeAmount] = useState(42180);
-  const [stripeDelta, setStripeDelta] = useState('+12% vs last month');
+const Stats = ({
+  currency = 'USD',
+  locale = 'en-US',
+  stripeBalanceAmount = null,
+  stripeBalanceLive = false,
+  stripeBalanceLoading = false,
+}: StatsProps) => {
+  const stripeValue =
+    stripeBalanceLoading
+      ? '—'
+      : stripeBalanceAmount !== null
+        ? formatCurrency(stripeBalanceAmount / 100, currency, {}, locale)
+        : '—';
 
-  useEffect(() => {
-    let mounted = true;
-    const loadBalance = async () => {
-      try {
-        const balance = await fetchStripeBalance();
-        if (!mounted || !balance.enabled || balance.available === undefined) {
-          return;
-        }
-        setStripeAmount(balance.available / 100);
-        setStripeDelta('Live balance');
-      } catch (err) {
-        // keep placeholder values
-      }
-    };
-    loadBalance();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const stripeDelta = stripeBalanceLive ? 'Live balance' : 'Not connected';
 
   const cards = [
     {
       label: 'Stripe balance',
-      value: formatCurrency(stripeAmount, currency, {}, locale),
+      value: stripeValue,
       delta: stripeDelta,
       icon: Coins,
       tone: 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-200',

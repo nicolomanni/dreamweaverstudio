@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Palette,
   Search,
   Settings,
   Sun,
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 
 type NavItem = {
-  id: 'analytics' | 'settings';
+  id: 'analytics' | 'settings' | 'styles';
   label: string;
   icon: LucideIcon;
   href: string;
@@ -40,6 +41,12 @@ const generalItems: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     href: '/settings',
+  },
+  {
+    id: 'styles',
+    label: 'Styles',
+    icon: Palette,
+    href: '/styles',
   },
 ];
 
@@ -170,9 +177,11 @@ export function DashboardLayout({
 
   useEffect(() => {
     if (!isNotificationsOpen) return;
-    setNotifications((prev) =>
-      prev.map((item) => (item.read ? item : { ...item, read: true })),
-    );
+    setNotifications((prev) => {
+      const hasUnread = prev.some((item) => !item.read);
+      if (!hasUnread) return prev;
+      return prev.map((item) => (item.read ? item : { ...item, read: true }));
+    });
   }, [isNotificationsOpen]);
 
 

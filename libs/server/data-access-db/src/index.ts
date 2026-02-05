@@ -7,3 +7,5 @@ export * from './lib/studio-settings.model';
 export * from './lib/studio-settings.repository';
 export * from './lib/user-profile.model';
 export * from './lib/user-profile.repository';
+export * from './lib/style.model';
+export * from './lib/style.repository';

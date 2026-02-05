@@ -22,6 +22,7 @@ export interface ComicProject {
   title: string;
   synopsis?: string;
   status?: 'draft' | 'in-progress' | 'completed';
+  styleId?: string;
   pages: Page[];
   coverImageUrl?: string;
   tags?: string[];
