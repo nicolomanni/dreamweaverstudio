@@ -18,6 +18,12 @@ import {
   X,
   Bell,
 } from 'lucide-react';
+import { Avatar } from './components/Avatar';
+import { Button } from './components/Button';
+import { Card } from './components/Card';
+import { IconButton } from './components/IconButton';
+import { Input } from './components/Input';
+import { MenuItem } from './components/MenuItem';
 
 type NavItem = {
   id: 'analytics' | 'settings' | 'styles';
@@ -120,6 +126,11 @@ export function DashboardLayout({
     typeof credits === 'number'
       ? numberFormatter.format(credits)
       : '—';
+  const userInitials = userName
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -371,14 +382,14 @@ export function DashboardLayout({
               alt="DreamWeaver Studio"
               className="h-10 w-full max-w-none object-contain"
             />
-            <button
-              type="button"
+            <IconButton
               aria-label="Close navigation"
               onClick={() => setIsSidebarOpen(false)}
-              className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
+              variant="outline"
+              size="md"
             >
               <X className="h-5 w-5" />
-            </button>
+            </IconButton>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-6 dw-scrollbar-hidden">
             <p className="text-xs uppercase tracking-[0.28em] text-slate-400 dark:text-foreground/50">
@@ -433,17 +444,19 @@ export function DashboardLayout({
             </div>
           </div>
           <div className="px-4 pb-6">
-            <div className="dw-card-muted flex w-full items-center justify-center px-3 py-2 text-xs font-semibold text-slate-500 dark:text-foreground/60">
+            <Card
+              variant="muted"
+              className="flex w-full items-center justify-center px-3 py-2 text-xs font-semibold text-slate-500 dark:text-foreground/60"
+            >
               Dashboard v{__APP_VERSION__}
-            </div>
+            </Card>
           </div>
         </aside>
 
         <div className="flex min-h-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-6 shadow-sm backdrop-blur dark:border-border dark:bg-black/60 dark:shadow-2xl">
             <div className="relative flex items-center gap-3">
-              <button
-                type="button"
+              <IconButton
                 aria-label="Collapse sidebar"
                 onClick={() =>
                   setIsSidebarCollapsed((prev) => {
@@ -454,39 +467,42 @@ export function DashboardLayout({
                     return next;
                   })
                 }
-                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost hidden lg:inline-flex"
+                variant="ghost"
+                size="md"
+                className="hidden lg:inline-flex"
               >
                 <ChevronLeft
                   className={`text-xl transition-transform ${
                     isSidebarCollapsed ? 'rotate-180' : ''
                   }`}
                 />
-              </button>
-              <button
-                type="button"
+              </IconButton>
+              <IconButton
                 aria-label="Open navigation"
                 onClick={() => setIsSidebarOpen(true)}
-                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost lg:hidden"
+                variant="ghost"
+                size="md"
+                className="lg:hidden"
               >
                 <Menu className="h-5 w-5" />
-              </button>
+              </IconButton>
               <div ref={searchRef} className="relative">
-                <button
-                  type="button"
+                <IconButton
                   aria-label="Search"
                   onClick={() => setIsSearchOpen((open) => !open)}
-                  className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
+                  variant="ghost"
+                  size="md"
                 >
                   <Search className="h-5 w-5" />
-                </button>
+                </IconButton>
                 {isSearchOpen ? (
                   <div className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-[320px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-border dark:bg-card">
                     <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
                       <Search className="h-4 w-4" />
-                      <input
+                      <Input
                         type="search"
                         placeholder="Search..."
-                        className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-foreground dark:placeholder:text-foreground/40"
+                        className="h-auto w-full border-0 bg-transparent px-0 py-0 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-foreground dark:placeholder:text-foreground/40"
                       />
                     </div>
                   </div>
@@ -494,20 +510,21 @@ export function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <IconButton
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
+                variant="ghost"
+                size="md"
               >
                 {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
+              </IconButton>
               <div ref={notificationsRef} className="relative">
-                <button
-                  type="button"
+                <IconButton
                   aria-label="Notifications"
                   onClick={() => setIsNotificationsOpen((open) => !open)}
-                  className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost relative"
+                  variant="ghost"
+                  size="md"
+                  className="relative"
                 >
                   {unreadCount > 0 ? (
                     <span className="absolute right-2 top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full border-2 border-white bg-rose-500 px-1 text-[10px] font-semibold text-white dark:border-black">
@@ -515,7 +532,7 @@ export function DashboardLayout({
                     </span>
                   ) : null}
                   <Bell className="h-5 w-5" />
-                </button>
+                </IconButton>
                 {isNotificationsOpen ? (
                   <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-border dark:bg-card">
                     <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-border">
@@ -523,16 +540,17 @@ export function DashboardLayout({
                         Notifications
                       </p>
                       {notifications.length > 0 ? (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => {
                             setNotifications([]);
                             setIsNotificationsOpen(false);
                           }}
-                          className="dw-btn dw-btn-sm dw-btn-ghost normal-case tracking-normal"
+                          variant="ghost"
+                          size="sm"
+                          className="normal-case tracking-normal"
                         >
                           Clear
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                     <div className="max-h-72 overflow-auto">
@@ -563,13 +581,15 @@ export function DashboardLayout({
                   </div>
                 ) : null}
               </div>
-              <Link
+              <IconButton
+                as={Link}
                 to="/settings"
                 aria-label="Settings"
-                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-ghost"
+                variant="ghost"
+                size="md"
               >
                 <Settings className="h-5 w-5" />
-              </Link>
+              </IconButton>
               <div className="flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-2.5 text-xs font-semibold text-slate-600 dark:border-border dark:bg-card dark:text-foreground/80">
                 <div className="flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-200">
@@ -612,29 +632,21 @@ export function DashboardLayout({
                 </div>
               </div>
               <div ref={userMenuRef} className="relative">
-                <button
-                  type="button"
+                <Button
                   onClick={() => setIsUserMenuOpen((open) => !open)}
                   aria-label="Open user menu"
-                  className="dw-btn dw-btn-md dw-btn-ghost normal-case tracking-normal bg-white px-2 text-slate-700 hover:bg-slate-100 dark:bg-card dark:text-foreground/80 dark:hover:bg-background/80"
+                  variant="ghost"
+                  size="md"
+                  className="normal-case tracking-normal bg-white px-2 text-slate-700 hover:bg-slate-100 dark:bg-card dark:text-foreground/80 dark:hover:bg-background/80"
                 >
-                  {userAvatarUrl ? (
-                    <img
-                      src={userAvatarUrl}
-                      alt={userName}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-gradient-to-br from-primary/60 to-secondary/60 text-xs font-semibold text-black">
-                      {userName
-                        .split(' ')
-                        .map((part) => part[0])
-                        .join('')
-                        .slice(0, 2)}
-                    </div>
-                  )}
+                  <Avatar
+                    src={userAvatarUrl}
+                    alt={userName}
+                    fallback={userInitials}
+                    size="md"
+                  />
                   <ChevronDown className="h-4 w-4" />
-                </button>
+                </Button>
                 {isUserMenuOpen ? (
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-border dark:bg-card">
                     <div className="border-b border-slate-200 px-4 py-3 dark:border-border">
@@ -645,23 +657,19 @@ export function DashboardLayout({
                         {userEmail}
                       </p>
                     </div>
-                    <Link
+                    <MenuItem
+                      as={Link}
                       to="/settings"
                       hash="profile"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="dw-menu-item"
                     >
                       <User className="h-4 w-4" />
                       Profile
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="dw-menu-item"
-                    >
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>
                       <LogOut className="h-4 w-4" />
                       Logout
-                    </button>
+                    </MenuItem>
                   </div>
                 ) : null}
               </div>

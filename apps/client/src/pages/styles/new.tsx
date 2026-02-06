@@ -21,6 +21,24 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  HelperText,
+  Input,
+  Label,
+  SegmentedControl,
+  SegmentedItem,
+  Select,
+  Switch,
+  Tab,
+  TabsList,
+  Textarea,
+} from '@dreamweaverstudio/client-ui';
+import {
   buildDraft,
   buildPayload,
   buildPreviewPrompt,
@@ -94,10 +112,6 @@ const StyleCreatePage = () => {
   const canShowForm = mode === 'manual' || hasExtracted;
   const hasFieldError = (key: string) =>
     showValidation && validation.missing.includes(key);
-  const inputBase = 'mt-2 dw-input';
-  const textAreaBase = 'mt-2 dw-textarea';
-  const inputNormal = '';
-  const inputError = 'dw-input-error';
 
   const handleUnauthorized = async (err: unknown) => {
     if (err instanceof Error && err.message === 'unauthorized') {
@@ -259,8 +273,8 @@ const StyleCreatePage = () => {
 
   return (
     <>
-      <div className="dw-card">
-        <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
+      <Card>
+        <CardHeader className="sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
               <span>Catalog</span>
@@ -274,16 +288,17 @@ const StyleCreatePage = () => {
               Define visual rules, prompts, and safety constraints for new comics.
             </p>
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="dw-card-body">
+        <CardBody>
           <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
             <div className="space-y-5">
-            <div className="dw-card-muted dw-card-body-sm">
+            <Card variant="muted">
+              <CardBody size="sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Start from
               </p>
-              <div className="mt-4 inline-flex w-full flex-wrap overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-border dark:bg-card">
+              <SegmentedControl className="mt-4">
                 {([
                   {
                     id: 'manual',
@@ -307,18 +322,14 @@ const StyleCreatePage = () => {
                   const Icon = item.icon;
                   const isActive = mode === item.id;
                   return (
-                    <button
+                    <SegmentedItem
                       key={item.id}
-                      type="button"
                       onClick={() => {
                         setMode(item.id);
                         setHasExtracted(item.id === 'manual');
                       }}
-                      className={`flex flex-1 items-center gap-3 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                        isActive
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-slate-600 hover:bg-slate-50 dark:text-foreground/70 dark:hover:bg-background'
-                      } ${index < items.length - 1 ? 'border-r border-slate-200 dark:border-border' : ''}`}
+                      active={isActive}
+                      withDivider={index < items.length - 1}
                     >
                       <span
                         className={`flex h-9 w-9 items-center justify-center rounded-xl ${
@@ -337,28 +348,28 @@ const StyleCreatePage = () => {
                           {item.description}
                         </p>
                       </div>
-                    </button>
+                    </SegmentedItem>
                   );
                 })}
-              </div>
+              </SegmentedControl>
 
               {mode === 'prompt' ? (
                 <div className="mt-4 space-y-3">
-                  <textarea
+                  <Textarea
                     value={examplePrompt}
                     onChange={(event) => setExamplePrompt(event.target.value)}
                     rows={5}
-                    className="dw-textarea"
+                    className="mt-2"
                     placeholder="Paste your example prompt here..."
                   />
-                  <button
-                    type="button"
+                  <Button
                     onClick={handlePromptExtract}
                     disabled={extracting || !examplePrompt.trim()}
-                    className="dw-btn dw-btn-md dw-btn-primary"
+                    variant="primary"
+                    size="md"
                   >
                     {extracting ? 'Extracting...' : 'Extract with Gemini'}
-                  </button>
+                  </Button>
                 </div>
               ) : null}
 
@@ -378,7 +389,12 @@ const StyleCreatePage = () => {
                       </div>
                     )}
                   </div>
-                  <label className="dw-btn dw-btn-md dw-btn-outline w-full">
+                  <Button
+                    as="label"
+                    variant="outline"
+                    size="md"
+                    className="w-full"
+                  >
                     Upload image
                     <input
                       type="file"
@@ -397,21 +413,23 @@ const StyleCreatePage = () => {
                         reader.readAsDataURL(file);
                       }}
                     />
-                  </label>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
                     onClick={handleImageExtract}
                     disabled={extracting || !exampleImage}
-                    className="dw-btn dw-btn-md dw-btn-primary"
+                    variant="primary"
+                    size="md"
                   >
                     {extracting ? 'Extracting...' : 'Extract with Gemini'}
-                  </button>
+                  </Button>
                 </div>
               ) : null}
 
-            </div>
+              </CardBody>
+            </Card>
 
-            <div className="dw-card-muted dw-card-body-sm">
+            <Card variant="muted">
+              <CardBody size="sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Presets
               </p>
@@ -424,62 +442,56 @@ const StyleCreatePage = () => {
                     Apply the default DreamWeaverComics visual style pack.
                   </p>
                 </div>
-                <button
-                  type="button"
+                <Button
                   onClick={() => applyExtractedStyle(DREAMWEAVER_PRESET)}
-                  className="dw-btn dw-btn-md dw-btn-outline"
+                  variant="outline"
+                  size="md"
                 >
                   <Sparkles className="h-4 w-4" />
                   Apply preset
-                </button>
+                </Button>
               </div>
-            </div>
+              </CardBody>
+            </Card>
 
             {canShowForm ? (
-              <div className="flex flex-wrap items-center gap-4 border-b border-slate-200 pb-2 dark:border-border">
+              <TabsList className="border-b border-slate-200 dark:border-border">
                 {tabs.map((tab) => (
-                  <button
+                  <Tab
                     key={tab.id}
-                    type="button"
+                    active={activeTab === tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`border-b-2 pb-2 text-xs font-semibold uppercase tracking-[0.25em] transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-foreground/60 dark:hover:text-foreground'
-                    }`}
                   >
                     {tab.label}
-                  </button>
+                  </Tab>
                 ))}
-              </div>
+              </TabsList>
             ) : (
-              <div className="dw-card dw-card-body-sm text-sm text-slate-500 dark:text-foreground/60">
-                Complete the extraction step to unlock the style editor.
-              </div>
+              <Card className="text-sm text-slate-500 dark:text-foreground/60">
+                <CardBody size="sm">
+                  Complete the extraction step to unlock the style editor.
+                </CardBody>
+              </Card>
             )}
 
-            {canShowForm && error ? (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-                {error}
-              </div>
-            ) : null}
+            {canShowForm && error ? <Alert variant="danger">{error}</Alert> : null}
 
             {canShowForm && showValidation && !validation.valid ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              <Alert variant="warning">
                 Required fields missing: {missingLabels.join(', ')}.
-              </div>
+              </Alert>
             ) : null}
 
             {canShowForm && activeTab === 'basics' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">
                       Style name
                       <span className="text-rose-500">*</span>
                     </span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="text"
                     value={draft.name}
                     onChange={(event) => {
@@ -494,46 +506,42 @@ const StyleCreatePage = () => {
                       }));
                     }}
                     aria-invalid={hasFieldError('name')}
-                    className={`${inputBase} ${
-                      hasFieldError('name') ? inputError : inputNormal
-                    }`}
+                    error={hasFieldError('name')}
+                    className="mt-2"
                   />
                   {hasFieldError('name') ? (
-                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                       This field is required.
-                    </p>
+                    </HelperText>
                   ) : null}
                 </div>
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">
                       Key
                       <span className="text-rose-500">*</span>
                     </span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="text"
                     value={draft.key ?? ''}
                     onChange={(event) =>
                       setDraft((prev) => ({ ...prev, key: event.target.value }))
                     }
                     aria-invalid={hasFieldError('key')}
-                    className={`${inputBase} ${
-                      hasFieldError('key') ? inputError : inputNormal
-                    }`}
+                    error={hasFieldError('key')}
+                    className="mt-2"
                   />
                   {hasFieldError('key') ? (
-                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                       This field is required.
-                    </p>
+                    </HelperText>
                   ) : null}
                 </div>
                 <div>
-                  <label className="dw-label">
-                    Status
-                  </label>
+                  <Label>Status</Label>
                   <div className="relative mt-2">
-                    <select
+                    <Select
                       value={draft.status ?? 'active'}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -541,51 +549,36 @@ const StyleCreatePage = () => {
                           status: event.target.value as ComicStyle['status'],
                         }))
                       }
-                      className="dw-select"
                     >
                       <option value="active">Active</option>
                       <option value="archived">Archived</option>
-                    </select>
+                    </Select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
+                  <Switch
+                    checked={!!draft.isDefault}
+                    onCheckedChange={(checked) =>
                       setDraft((prev) => ({
                         ...prev,
-                        isDefault: !prev.isDefault,
+                        isDefault: checked,
                       }))
                     }
-                    aria-label="Toggle default style"
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
-                      draft.isDefault
-                        ? 'bg-primary'
-                        : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                        draft.isDefault ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
+                    label="Toggle default style"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
                       Default style
                     </p>
-                    <p className="dw-helper">
+                    <HelperText>
                       Used automatically for new comics.
-                    </p>
+                    </HelperText>
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="dw-label">
-                    Description
-                  </label>
-                  <textarea
+                  <Label>Description</Label>
+                  <Textarea
                     value={draft.description ?? ''}
                     onChange={(event) =>
                       setDraft((prev) => ({
@@ -594,7 +587,7 @@ const StyleCreatePage = () => {
                       }))
                     }
                     rows={3}
-                    className="mt-2 dw-textarea"
+                    className="mt-2"
                   />
                 </div>
               </div>
@@ -604,15 +597,15 @@ const StyleCreatePage = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 {visualFields.map((field) => (
                   <div key={field.key}>
-                    <label className="dw-label">
+                    <Label>
                       <span className="flex items-center gap-1">
                         {field.label}
                         {field.required ? (
                           <span className="text-rose-500">*</span>
                         ) : null}
                       </span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       value={draft.visualStyle?.[field.key] ?? ''}
                       onChange={(event) =>
@@ -625,14 +618,13 @@ const StyleCreatePage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError(field.key)}
-                      className={`${inputBase} ${
-                        hasFieldError(field.key) ? inputError : inputNormal
-                      }`}
+                      error={hasFieldError(field.key)}
+                      className="mt-2"
                     />
                     {hasFieldError(field.key) ? (
-                      <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                      <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                         This field is required.
-                      </p>
+                      </HelperText>
                     ) : null}
                   </div>
                 ))}
@@ -642,10 +634,10 @@ const StyleCreatePage = () => {
             {canShowForm && activeTab === 'prompt' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">System prompt</span>
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
                     value={draft.systemPrompt ?? ''}
                     onChange={(event) =>
                       setDraft((prev) => ({
@@ -654,17 +646,17 @@ const StyleCreatePage = () => {
                       }))
                     }
                     rows={4}
-                    className={textAreaBase}
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">
                       Prompt template
                       <span className="text-rose-500">*</span>
                     </span>
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
                     value={draft.promptTemplate ?? ''}
                     onChange={(event) =>
                       setDraft((prev) => ({
@@ -674,25 +666,24 @@ const StyleCreatePage = () => {
                     }
                     rows={8}
                     aria-invalid={hasFieldError('promptTemplate')}
-                    className={`${textAreaBase} font-mono text-xs ${
-                      hasFieldError('promptTemplate') ? inputError : ''
-                    }`}
+                    error={hasFieldError('promptTemplate')}
+                    className="mt-2 font-mono text-xs"
                   />
                   {hasFieldError('promptTemplate') ? (
-                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                       This field is required.
-                    </p>
+                    </HelperText>
                   ) : null}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="dw-label">
+                    <Label>
                       <span className="flex items-center gap-1">
                         Technical tags
                         <span className="text-rose-500">*</span>
                       </span>
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
                       value={draft.technicalTags ?? ''}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -702,24 +693,23 @@ const StyleCreatePage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('technicalTags')}
-                      className={`${textAreaBase} ${
-                        hasFieldError('technicalTags') ? inputError : ''
-                      }`}
+                      error={hasFieldError('technicalTags')}
+                      className="mt-2"
                     />
                     {hasFieldError('technicalTags') ? (
-                      <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                      <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                         This field is required.
-                      </p>
+                      </HelperText>
                     ) : null}
                   </div>
                   <div>
-                    <label className="dw-label">
+                    <Label>
                       <span className="flex items-center gap-1">
                         Negative prompt
                         <span className="text-rose-500">*</span>
                       </span>
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
                       value={draft.negativePrompt ?? ''}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -729,23 +719,20 @@ const StyleCreatePage = () => {
                       }
                       rows={4}
                       aria-invalid={hasFieldError('negativePrompt')}
-                      className={`${textAreaBase} ${
-                        hasFieldError('negativePrompt') ? inputError : ''
-                      }`}
+                      error={hasFieldError('negativePrompt')}
+                      className="mt-2"
                     />
                     {hasFieldError('negativePrompt') ? (
-                      <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                      <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                         This field is required.
-                      </p>
+                      </HelperText>
                     ) : null}
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="dw-label">
-                      Continuity rules
-                    </label>
-                    <textarea
+                    <Label>Continuity rules</Label>
+                    <Textarea
                       value={draft.continuityRules ?? ''}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -754,14 +741,12 @@ const StyleCreatePage = () => {
                         }))
                       }
                       rows={4}
-                      className={textAreaBase}
+                      className="mt-2"
                     />
                   </div>
                   <div>
-                    <label className="dw-label">
-                      Format guidelines
-                    </label>
-                    <textarea
+                    <Label>Format guidelines</Label>
+                    <Textarea
                       value={draft.formatGuidelines ?? ''}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -770,7 +755,7 @@ const StyleCreatePage = () => {
                         }))
                       }
                       rows={4}
-                      className={textAreaBase}
+                      className="mt-2"
                     />
                   </div>
                 </div>
@@ -780,14 +765,14 @@ const StyleCreatePage = () => {
             {canShowForm && activeTab === 'safety' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">
                       Interaction language
                       <span className="text-rose-500">*</span>
                     </span>
-                  </label>
+                  </Label>
                   <div className="relative mt-2">
-                    <select
+                    <Select
                       value={draft.interactionLanguage ?? 'Italian'}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -796,30 +781,28 @@ const StyleCreatePage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('interactionLanguage')}
-                      className={`dw-select ${
-                        hasFieldError('interactionLanguage') ? inputError : ''
-                      }`}
+                      error={hasFieldError('interactionLanguage')}
                     >
                       <option value="Italian">Italian</option>
                       <option value="English">English</option>
-                    </select>
+                    </Select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   </div>
                   {hasFieldError('interactionLanguage') ? (
-                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                       This field is required.
-                    </p>
+                    </HelperText>
                   ) : null}
                 </div>
                 <div>
-                  <label className="dw-label">
+                  <Label>
                     <span className="flex items-center gap-1">
                       Prompt language
                       <span className="text-rose-500">*</span>
                     </span>
-                  </label>
+                  </Label>
                   <div className="relative mt-2">
-                    <select
+                    <Select
                       value={draft.promptLanguage ?? 'English'}
                       onChange={(event) =>
                         setDraft((prev) => ({
@@ -828,51 +811,37 @@ const StyleCreatePage = () => {
                         }))
                       }
                       aria-invalid={hasFieldError('promptLanguage')}
-                      className={`dw-select ${
-                        hasFieldError('promptLanguage') ? inputError : ''
-                      }`}
+                      error={hasFieldError('promptLanguage')}
                     >
                       <option value="English">English</option>
                       <option value="Italian">Italian</option>
-                    </select>
+                    </Select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   </div>
                   {hasFieldError('promptLanguage') ? (
-                    <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    <HelperText className="mt-2 text-rose-600 dark:text-rose-300">
                       This field is required.
-                    </p>
+                    </HelperText>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
+                  <Switch
+                    checked={!!draft.safety?.sfwOnly}
+                    onCheckedChange={(checked) =>
                       setDraft((prev) => ({
                         ...prev,
-                        safety: { sfwOnly: !prev.safety?.sfwOnly },
+                        safety: { sfwOnly: checked },
                       }))
                     }
-                    aria-label="Toggle SFW only"
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${
-                      draft.safety?.sfwOnly
-                        ? 'bg-primary'
-                        : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                        draft.safety?.sfwOnly ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
+                    label="Toggle SFW only"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-slate-700 dark:text-foreground">
                       SFW only
                     </p>
-                    <p className="dw-helper">
+                    <HelperText>
                       Enforce safe-for-work output across prompts.
-                    </p>
+                    </HelperText>
                   </div>
                 </div>
               </div>
@@ -880,7 +849,8 @@ const StyleCreatePage = () => {
           </div>
 
             <aside className="space-y-4">
-            <div className="dw-card-muted dw-card-body-sm">
+            <Card variant="muted">
+              <CardBody size="sm">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Preview
               </p>
@@ -898,7 +868,12 @@ const StyleCreatePage = () => {
                   </div>
                 )}
               </div>
-              <label className="dw-btn dw-btn-md dw-btn-outline mt-4 w-full">
+              <Button
+                as="label"
+                variant="outline"
+                size="md"
+                className="mt-4 w-full"
+              >
                 Upload preview
                 <input
                   type="file"
@@ -911,24 +886,29 @@ const StyleCreatePage = () => {
                     }
                   }}
                 />
-              </label>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={handleGeneratePreview}
                 disabled={previewMutation.isPending}
-                className="dw-btn dw-btn-md dw-btn-primary mt-3 w-full"
+                variant="primary"
+                size="md"
+                className="mt-3 w-full"
               >
                 <Sparkles className="h-4 w-4" />
                 {previewMutation.isPending ? 'Generating...' : 'Generate preview'}
-              </button>
+              </Button>
               {previewError ? (
-                <p className="mt-3 text-xs text-rose-600 dark:text-rose-300">
+                <HelperText className="mt-3 text-rose-600 dark:text-rose-300">
                   {previewError}
-                </p>
+                </HelperText>
               ) : null}
-            </div>
+              </CardBody>
+            </Card>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
+            <Card
+              variant="muted"
+              className="p-5 text-sm text-slate-600 dark:text-foreground/70"
+            >
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                 Status
               </p>
@@ -940,21 +920,16 @@ const StyleCreatePage = () => {
                 )}
                 <span>{draft.status === 'archived' ? 'Archived' : 'Active'}</span>
               </div>
-            </div>
+            </Card>
             </aside>
           </div>
-        </div>
+        </CardBody>
 
-        <div className="dw-card-footer sticky bottom-0 z-10 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:bg-card/95 dark:shadow-[0_-12px_40px_rgba(15,23,42,0.6)]">
-          <button
-            type="button"
-            onClick={handleDiscard}
-            className="dw-btn dw-btn-md dw-btn-outline"
-          >
+        <CardFooter className="sticky bottom-0 z-10 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur dark:bg-card/95 dark:shadow-[0_-12px_40px_rgba(15,23,42,0.6)]">
+          <Button onClick={handleDiscard} variant="outline" size="md">
             Discard
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={
               createMutation.isPending ||
@@ -962,16 +937,17 @@ const StyleCreatePage = () => {
               uploadingPreview ||
               previewMutation.isPending
             }
-            className="dw-btn dw-btn-lg dw-btn-primary"
+            size="lg"
+            variant="primary"
           >
             {uploadingPreview
               ? 'Uploading preview...'
               : createMutation.isPending
                 ? 'Saving...'
                 : 'Create style'}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
 
       <ConfirmDialog
         open={showDiscardConfirm}

@@ -2,6 +2,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { router } from '../router';
+import { ToastProvider } from '@dreamweaverstudio/client-ui';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,10 +20,12 @@ export function App() {
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-        {import.meta.env.DEV ? (
-          <TanStackRouterDevtools router={router} position="bottom-right" />
-        ) : null}
+        <ToastProvider>
+          <RouterProvider router={router} />
+          {import.meta.env.DEV ? (
+            <TanStackRouterDevtools router={router} position="bottom-right" />
+          ) : null}
+        </ToastProvider>
       </QueryClientProvider>
     </>
   );

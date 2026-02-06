@@ -1,9 +1,5 @@
-import {
-  BookOpen,
-  Coins,
-  Layers,
-  ChevronDown,
-} from 'lucide-react';
+import { BookOpen, Coins, Layers, ChevronDown } from 'lucide-react';
+import { Button, Card, CardBody } from '@dreamweaverstudio/client-ui';
 import { formatCurrency, formatNumber } from '../../utils/currency';
 
 type StatsProps = {
@@ -55,56 +51,60 @@ const Stats = ({
     },
   ];
   return (
-    <section className="dw-card dw-card-body">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
-            Overview
-          </p>
-          <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
-            Studio performance
-          </h3>
+    <Card as="section">
+      <CardBody>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
+              Overview
+            </p>
+            <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
+              Studio performance
+            </h3>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            Monthly
+            <ChevronDown className="h-4 w-4" />
+          </Button>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-2 dw-btn dw-btn-sm dw-btn-outline"
-        >
-          Monthly
-          <ChevronDown className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-border dark:bg-background"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`flex h-11 w-11 items-center justify-center rounded-full ${card.tone}`}
-                >
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
-                    {card.label}
-                  </p>
-                  <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-foreground">
-                    {card.value}
-                  </p>
-                  <p className="mt-1 text-xs text-emerald-500">{card.delta}</p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Card
+                key={card.label}
+                variant="muted"
+                className="px-4 py-4"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`flex h-11 w-11 items-center justify-center rounded-full ${card.tone}`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-foreground/50">
+                      {card.label}
+                    </p>
+                    <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-foreground">
+                      {card.value}
+                    </p>
+                    <p className="mt-1 text-xs text-emerald-500">{card.delta}</p>
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-6 h-64 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-border dark:bg-background">
-        <div className="h-full w-full rounded-2xl bg-[linear-gradient(120deg,rgba(34,211,238,0.18),rgba(124,92,255,0.12))]" />
-      </div>
-    </section>
+              </Card>
+            );
+          })}
+        </div>
+        <div className="mt-6 h-64 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-border dark:bg-background">
+          <div className="h-full w-full rounded-2xl bg-[linear-gradient(120deg,rgba(34,211,238,0.18),rgba(124,92,255,0.12))]" />
+        </div>
+      </CardBody>
+    </Card>
   );
 };
 

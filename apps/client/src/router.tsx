@@ -7,6 +7,7 @@ import {
   Outlet,
   useRouterState,
 } from '@tanstack/react-router';
+import { LoadingBar } from '@dreamweaverstudio/client-ui';
 
 import Login from './pages/login';
 import Dashboard from './pages/dashboard';
@@ -72,7 +73,7 @@ const RootLayout = () => {
       {loaderVisible ? (
         <>
           <div className="pointer-events-none fixed left-0 top-0 z-50 h-2 w-full bg-slate-200/80 shadow-sm backdrop-blur dark:bg-slate-800/80">
-            <div className="dw-loading-bar h-full" />
+            <LoadingBar />
           </div>
           <div className="pointer-events-none fixed left-1/2 top-4 z-50 -translate-x-1/2">
             <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-700 shadow-lg backdrop-blur dark:border-border dark:bg-black/75 dark:text-foreground/80">

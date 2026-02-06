@@ -26,6 +26,23 @@ import {
   User,
   Zap,
 } from 'lucide-react';
+import {
+  Avatar,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  HelperText,
+  IconButton,
+  Input,
+  Label,
+  Select,
+  useToast,
+  Switch,
+  Textarea,
+} from '@dreamweaverstudio/client-ui';
 import { getAuth } from 'firebase/auth';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { formatCurrency, normalizeCurrency } from '../../utils/currency';
@@ -103,37 +120,6 @@ const GEMINI_SAFETY_OPTIONS = [
   { value: 'relaxed', label: 'Relaxed' },
 ];
 
-const Toggle = ({
-  enabled,
-  onChange,
-  label,
-  disabled = false,
-}: {
-  enabled: boolean;
-  onChange: () => void;
-  label: string;
-  disabled?: boolean;
-}) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={enabled}
-    disabled={disabled}
-    onClick={onChange}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-black ${
-      enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
-    } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-  >
-    <span className="sr-only">{label}</span>
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-        enabled ? 'translate-x-5' : 'translate-x-0'
-      }`}
-    />
-  </button>
-  );
-
 const UnsavedBadge = ({ show }: { show: boolean }) =>
   show ? (
     <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-600 dark:text-amber-400">
@@ -187,9 +173,7 @@ const SettingsPage = () => {
   const [savingIntegrations, setSavingIntegrations] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<
-    { id: number; type: 'success' | 'error'; message: string }[]
-  >([]);
+  const { pushToast } = useToast();
   const [initialStudio, setInitialStudio] = useState<{
     displayName: string;
     email: string;
@@ -367,16 +351,6 @@ const SettingsPage = () => {
           : 'Settings';
     document.title = `${sectionLabel} — DreamWeaverComics Studio`;
   }, [activeSection]);
-
-  const pushToast = (type: 'success' | 'error', message: string) => {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-    setToasts((prev) => [...prev, { id, type, message }]);
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
-      }, 3200);
-    }
-  };
 
   const resolveSectionFromHash = (hash: string) => {
     const value = hash.replace('#', '');
@@ -809,27 +783,9 @@ const SettingsPage = () => {
 
   return (
     <>
-      <div className="pointer-events-none fixed right-6 top-6 z-50 flex flex-col gap-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${
-              toast.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'
-            }`}
-          >
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                toast.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'
-              }`}
-            />
-            {toast.message}
-          </div>
-        ))}
-      </div>
       <section className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="dw-card dw-card-body-sm">
+        <Card as="aside">
+          <CardBody size="sm">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
             Settings
           </p>
@@ -864,12 +820,13 @@ const SettingsPage = () => {
               );
             })}
           </nav>
-        </aside>
+          </CardBody>
+        </Card>
 
         <div className="space-y-6">
           {activeSection === 'general' ? (
-            <div className="dw-card">
-              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
+            <Card>
+              <CardHeader className="sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     General
@@ -880,11 +837,11 @@ const SettingsPage = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <UnsavedBadge show={isStudioDirty} />
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleStudioSave}
                     disabled={studioDisabled}
-                    className="dw-btn dw-btn-md dw-btn-primary"
+                    variant="primary"
+                    size="md"
                   >
                     {savingStudio ? (
                       <span className="inline-flex items-center gap-2">
@@ -894,88 +851,78 @@ const SettingsPage = () => {
                     ) : (
                       'Save studio'
                     )}
-                  </button>
+                  </Button>
                 </div>
-              </div>
-              <div className="dw-card-body">
+              </CardHeader>
+              <CardBody>
                 <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="dw-label">
-                    Display name
-                  </label>
-                  <input
+                  <Label>Display name</Label>
+                  <Input
                     type="text"
                     value={studioDisplayName}
                     onChange={(event) => setStudioDisplayName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 dw-input"
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <label className="dw-label">
-                    Email
-                  </label>
-                  <input
+                  <Label>Email</Label>
+                  <Input
                     type="email"
                     value={studioEmail}
                     onChange={(event) => setStudioEmail(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 dw-input"
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <label className="dw-label">
-                    Studio name
-                  </label>
-                  <input
+                  <Label>Studio name</Label>
+                  <Input
                     type="text"
                     value={studioName}
                     onChange={(event) => setStudioName(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 dw-input"
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <label className="dw-label">
-                    Timezone
-                  </label>
-                  <input
+                  <Label>Timezone</Label>
+                  <Input
                     type="text"
                     value={studioTimezone}
                     onChange={(event) => setStudioTimezone(event.target.value)}
                     disabled={studioDisabled}
-                    className="mt-2 dw-input"
+                    className="mt-2"
                   />
                 </div>
                   <div>
-                    <label className="dw-label">
-                      Number format
-                    </label>
+                    <Label>Number format</Label>
                     <div className="relative mt-2">
-                      <select
+                      <Select
                         value={numberFormatLocale}
                         onChange={(event) => setNumberFormatLocale(event.target.value)}
                         disabled={studioDisabled}
-                        className="dw-select peer"
+                        className="peer"
                       >
                         {numberFormatOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
                     </div>
-                    <p className="mt-2 dw-helper">
+                    <HelperText className="mt-2">
                       Controls thousand and decimal separators across the dashboard.
-                    </p>
+                    </HelperText>
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           ) : activeSection === 'profile' ? (
-            <div className="dw-card">
-              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
+            <Card>
+              <CardHeader className="sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     Profile
@@ -986,11 +933,11 @@ const SettingsPage = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <UnsavedBadge show={isProfileDirty} />
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleProfileSave}
                     disabled={profileDisabled}
-                    className="dw-btn dw-btn-md dw-btn-primary"
+                    variant="primary"
+                    size="md"
                   >
                     {savingProfile ? (
                       <span className="inline-flex items-center gap-2">
@@ -1000,38 +947,33 @@ const SettingsPage = () => {
                     ) : (
                       'Save profile'
                     )}
-                  </button>
+                  </Button>
                 </div>
-              </div>
-              <div className="dw-card-body space-y-6">
+              </CardHeader>
+              <CardBody className="space-y-6">
                 <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70">
-                  {profileAvatarUrl ? (
-                    <img
-                      src={profileAvatarUrl}
-                      alt={profileDisplayName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    profileDisplayName
-                      .split(' ')
-                      .map((part) => part[0])
-                      .join('')
-                      .slice(0, 2)
-                  )}
-                </div>
+                <Avatar
+                  src={profileAvatarUrl ?? undefined}
+                  alt={profileDisplayName}
+                  fallback={profileDisplayName
+                    .split(' ')
+                    .map((part) => part[0])
+                    .join('')
+                    .slice(0, 2)}
+                  size="lg"
+                  className="rounded-2xl border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-600 dark:border-border dark:bg-background dark:text-foreground/70"
+                />
                 <div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
                     {userName}
                   </p>
-                  <p className="dw-helper">
-                    {userEmail}
-                  </p>
+                  <HelperText>{userEmail}</HelperText>
                 </div>
-                <label
-                  className={`ml-auto dw-btn dw-btn-md dw-btn-outline ${
-                    profileDisabled ? 'pointer-events-none opacity-60' : ''
-                  }`}
+                <Button
+                  as="label"
+                  variant="outline"
+                  size="md"
+                  className={`ml-auto ${profileDisabled ? 'pointer-events-none opacity-60' : ''}`}
                 >
                   {uploadingAvatar ? (
                     <>
@@ -1052,39 +994,35 @@ const SettingsPage = () => {
                       }
                     }}
                   />
-                </label>
+                </Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="dw-label">
-                      Display name
-                    </label>
-                    <input
+                    <Label>Display name</Label>
+                    <Input
                       type="text"
                       value={profileDisplayName}
                       onChange={(event) => setProfileDisplayName(event.target.value)}
                       disabled={profileDisabled}
-                      className="mt-2 dw-input"
+                      className="mt-2"
                     />
                   </div>
                   <div>
-                    <label className="dw-label">
-                      Email
-                    </label>
-                    <input
+                    <Label>Email</Label>
+                    <Input
                       type="email"
                       value={profileEmail}
                       onChange={(event) => setProfileEmail(event.target.value)}
                       disabled={profileDisabled}
-                      className="mt-2 dw-input"
+                      className="mt-2"
                     />
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           ) : (
-            <div className="dw-card">
-              <div className="dw-card-header sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
+            <Card>
+              <CardHeader className="sticky top-0 z-10 rounded-t-2xl bg-white/95 backdrop-blur dark:bg-card/95">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
                     Integration
@@ -1092,17 +1030,17 @@ const SettingsPage = () => {
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-foreground">
                     Integrations
                   </h3>
-                  <p className="mt-2 dw-helper">
+                  <HelperText className="mt-2">
                     Supercharge your workflow using these integrations
-                  </p>
+                  </HelperText>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <UnsavedBadge show={isIntegrationsDirty} />
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleIntegrationsSave}
                     disabled={integrationsDisabled}
-                    className="dw-btn dw-btn-lg dw-btn-primary"
+                    size="lg"
+                    variant="primary"
                   >
                     {savingIntegrations ? (
                       <span className="inline-flex items-center gap-2">
@@ -1112,13 +1050,11 @@ const SettingsPage = () => {
                     ) : (
                       'Save integrations'
                     )}
-                  </button>
+                  </Button>
                 </div>
-              </div>
-              <div className="dw-card-body space-y-4">
-                {error ? (
-                  <p className="text-sm text-rose-500">{error}</p>
-                ) : null}
+              </CardHeader>
+              <CardBody className="space-y-4">
+                {error ? <Alert variant="danger">{error}</Alert> : null}
                 <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-border dark:border-border dark:bg-card">
                   {integrations.map((item) => (
                     <div key={item.id} className="px-5 py-4">
@@ -1133,9 +1069,7 @@ const SettingsPage = () => {
                           <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
                             {item.name}
                           </p>
-                          <p className="dw-helper">
-                            {item.description}
-                          </p>
+                          <HelperText>{item.description}</HelperText>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-4">
@@ -1147,12 +1081,9 @@ const SettingsPage = () => {
                         >
                           Learn more
                         </a>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] ${
-                            item.active
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-                              : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-border dark:bg-background dark:text-foreground/60'
-                          }`}
+                        <Badge
+                          variant={item.active ? 'success' : 'neutral'}
+                          className="px-2 py-1 text-[10px] tracking-[0.25em]"
                         >
                           {item.active ? (
                             <CheckCircle2 className="h-3 w-3" />
@@ -1160,10 +1091,10 @@ const SettingsPage = () => {
                             <XCircle className="h-3 w-3" />
                           )}
                           {item.active ? 'Active' : 'Inactive'}
-                        </span>
-                        <Toggle
-                          enabled={item.enabled}
-                          onChange={item.onToggle}
+                        </Badge>
+                        <Switch
+                          checked={item.enabled}
+                          onCheckedChange={() => item.onToggle()}
                           label={`Enable ${item.name} integration`}
                           disabled={integrationsDisabled}
                         />
@@ -1172,14 +1103,11 @@ const SettingsPage = () => {
                     {item.id === 'stripe' && stripeEnabled ? (
                       <div className="mt-4 space-y-4">
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
-                          <label
-                            htmlFor="stripe-secret-key"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="stripe-secret-key" variant="inline">
                             Secret key
-                          </label>
+                          </Label>
                           <div className="relative">
-                            <input
+                            <Input
                               id="stripe-secret-key"
                               type="password"
                               placeholder="Enter secret key"
@@ -1194,7 +1122,7 @@ const SettingsPage = () => {
                                 integrationsDisabled ||
                                 (stripeHasSecret && !stripeKeyEditable)
                               }
-                              className="dw-input pr-10"
+                              className="pr-10"
                             />
                             {stripeHasSecret && !stripeKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1202,8 +1130,7 @@ const SettingsPage = () => {
                           </div>
                           <div className="self-center">
                             {stripeHasSecret ? (
-                              <button
-                                type="button"
+                              <IconButton
                                 onClick={() => {
                                   if (stripeKeyEditable) {
                                     setStripeKeyEditable(false);
@@ -1218,14 +1145,15 @@ const SettingsPage = () => {
                                 disabled={integrationsDisabled}
                                 aria-label={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
                                 title={stripeKeyEditable ? 'Cancel edit' : 'Edit API key'}
-                                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
+                                variant="outline"
+                                size="md"
                               >
                                 {stripeKeyEditable ? (
                                   <X className="h-4 w-4" />
                                 ) : (
                                   <PencilLine className="h-4 w-4" />
                                 )}
-                              </button>
+                              </IconButton>
                             ) : (
                               <span className="hidden h-10 w-10 md:inline-block" />
                             )}
@@ -1235,28 +1163,25 @@ const SettingsPage = () => {
                           </p>
                         </div>
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="stripe-default-currency"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="stripe-default-currency" variant="inline">
                             Default currency
-                          </label>
+                          </Label>
                           <div className="relative">
-                            <select
+                            <Select
                               id="stripe-default-currency"
                               value={stripeDefaultCurrency}
                               onChange={(event) =>
                                 setStripeDefaultCurrency(event.target.value)
                               }
                               disabled={integrationsDisabled}
-                              className="dw-select peer"
+                              className="peer"
                             >
                               {stripeCurrencyOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                   {option.label}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
                           </div>
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
@@ -1264,15 +1189,13 @@ const SettingsPage = () => {
                           </p>
                         </div>
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-                          <span className="dw-label-inline">
-                            Available balance
-                          </span>
-                          <input
+                          <Label variant="inline">Available balance</Label>
+                          <Input
                             type="text"
                             value={stripeBalance}
                             disabled
                             readOnly
-                            className="dw-input font-semibold text-slate-900"
+                            className="font-semibold text-slate-900"
                           />
                         </div>
                       </div>
@@ -1280,14 +1203,11 @@ const SettingsPage = () => {
                     {item.id === 'gemini' && geminiEnabled ? (
                       <div className="mt-4 space-y-4">
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)_auto]">
-                          <label
-                            htmlFor="gemini-api-key"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-api-key" variant="inline">
                             API key
-                          </label>
+                          </Label>
                           <div className="relative">
-                            <input
+                            <Input
                               id="gemini-api-key"
                               type="password"
                               placeholder="Enter API key"
@@ -1301,7 +1221,7 @@ const SettingsPage = () => {
                               disabled={
                                 integrationsDisabled || (geminiHasKey && !geminiKeyEditable)
                               }
-                              className="dw-input pr-10"
+                              className="pr-10"
                             />
                             {geminiHasKey && !geminiKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1309,8 +1229,7 @@ const SettingsPage = () => {
                           </div>
                           <div className="self-center">
                             {geminiHasKey ? (
-                              <button
-                                type="button"
+                              <IconButton
                                 onClick={() => {
                                   if (geminiKeyEditable) {
                                     setGeminiKeyEditable(false);
@@ -1325,14 +1244,15 @@ const SettingsPage = () => {
                                 disabled={integrationsDisabled}
                                 aria-label={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
                                 title={geminiKeyEditable ? 'Cancel edit' : 'Edit API key'}
-                                className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
+                                variant="outline"
+                                size="md"
                               >
                                 {geminiKeyEditable ? (
                                   <X className="h-4 w-4" />
                                 ) : (
                                   <PencilLine className="h-4 w-4" />
                                 )}
-                              </button>
+                              </IconButton>
                             ) : (
                               <span className="hidden h-10 w-10 md:inline-block" />
                             )}
@@ -1343,26 +1263,23 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-model"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-model" variant="inline">
                             Model
-                          </label>
+                          </Label>
                           <div className="relative">
-                            <select
+                            <Select
                               id="gemini-model"
                               value={geminiModel}
                               onChange={(event) => setGeminiModel(event.target.value)}
                               disabled={integrationsDisabled}
-                              className="dw-select peer"
+                              className="peer"
                             >
                               {geminiModelOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                   {option.label}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
                           </div>
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
@@ -1372,13 +1289,10 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-temperature"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-temperature" variant="inline">
                             Temperature
-                          </label>
-                          <input
+                          </Label>
+                          <Input
                             id="gemini-temperature"
                             type="number"
                             min={0}
@@ -1390,7 +1304,6 @@ const SettingsPage = () => {
                               setGeminiTemperature(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Higher values make output more creative (0–2).
@@ -1398,13 +1311,10 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-max-tokens"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-max-tokens" variant="inline">
                             Max output tokens
-                          </label>
-                          <input
+                          </Label>
+                          <Input
                             id="gemini-max-tokens"
                             type="number"
                             min={1}
@@ -1415,7 +1325,6 @@ const SettingsPage = () => {
                               setGeminiMaxTokens(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Limits how long responses can be.
@@ -1423,28 +1332,25 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-safety"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-safety" variant="inline">
                             Safety
-                          </label>
+                          </Label>
                           <div className="flex flex-wrap items-center gap-3">
                             <div className="flex items-center gap-3">
-                              <Toggle
-                                enabled={geminiSafetyEnabled}
-                                onChange={() =>
+                              <Switch
+                                checked={geminiSafetyEnabled}
+                                onCheckedChange={() =>
                                   setGeminiSafetyEnabled((prev) => !prev)
                                 }
                                 label="Enable Gemini safety"
                                 disabled={integrationsDisabled}
                               />
-                              <span className="dw-helper">
+                              <HelperText as="span">
                                 {geminiSafetyEnabled ? 'On' : 'Off'}
-                              </span>
+                              </HelperText>
                             </div>
                             <div className="relative min-w-[220px] flex-1">
-                              <select
+                              <Select
                                 id="gemini-safety"
                                 value={geminiSafetyPreset}
                                 onChange={(event) => {
@@ -1456,14 +1362,14 @@ const SettingsPage = () => {
                                   setGeminiSafetyEnabled(true);
                                 }}
                                 disabled={integrationsDisabled || !geminiSafetyEnabled}
-                                className="dw-select peer"
+                                className="peer"
                               >
                                 {GEMINI_SAFETY_OPTIONS.map((option) => (
                                   <option key={option.value} value={option.value}>
                                     {option.label}
                                   </option>
                                 ))}
-                              </select>
+                              </Select>
                               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:text-slate-400 dark:peer-disabled:text-foreground/40" />
                             </div>
                           </div>
@@ -1474,20 +1380,17 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-system-prompt"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-system-prompt" variant="inline">
                             System prompt
-                          </label>
-                          <textarea
+                          </Label>
+                          <Textarea
                             id="gemini-system-prompt"
                             rows={3}
                             placeholder="Add a default style or instruction for Gemini"
                             value={geminiSystemPrompt}
                             onChange={(event) => setGeminiSystemPrompt(event.target.value)}
                             disabled={integrationsDisabled}
-                            className="dw-textarea min-h-[96px]"
+                            className="min-h-[96px]"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Applied to every request as a base instruction.
@@ -1495,19 +1398,17 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-                          <span className="dw-label-inline">
-                            Streaming
-                          </span>
+                          <Label variant="inline">Streaming</Label>
                           <div className="flex items-center gap-3">
-                            <Toggle
-                              enabled={geminiStreaming}
-                              onChange={() => setGeminiStreaming((prev) => !prev)}
+                            <Switch
+                              checked={geminiStreaming}
+                              onCheckedChange={() => setGeminiStreaming((prev) => !prev)}
                               label="Enable Gemini streaming"
                               disabled={integrationsDisabled}
                             />
-                            <span className="dw-helper">
+                            <HelperText as="span">
                               {geminiStreaming ? 'On' : 'Off'}
-                            </span>
+                            </HelperText>
                           </div>
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Stream tokens as they are generated.
@@ -1515,13 +1416,10 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-timeout"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-timeout" variant="inline">
                             Timeout (sec)
-                          </label>
-                          <input
+                          </Label>
+                          <Input
                             id="gemini-timeout"
                             type="number"
                             min={1}
@@ -1532,7 +1430,6 @@ const SettingsPage = () => {
                               setGeminiTimeoutSec(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Maximum time to wait for a response.
@@ -1540,13 +1437,10 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-retry"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-retry" variant="inline">
                             Retry count
-                          </label>
-                          <input
+                          </Label>
+                          <Input
                             id="gemini-retry"
                             type="number"
                             min={0}
@@ -1557,7 +1451,6 @@ const SettingsPage = () => {
                               setGeminiRetryCount(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Number of automatic retries on failure.
@@ -1565,13 +1458,10 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid gap-x-4 gap-y-1 md:grid-cols-[180px_minmax(0,1fr)]">
-                          <label
-                            htmlFor="gemini-credit-alert"
-                            className="dw-label-inline"
-                          >
+                          <Label htmlFor="gemini-credit-alert" variant="inline">
                             Credits alert threshold
-                          </label>
-                          <input
+                          </Label>
+                          <Input
                             id="gemini-credit-alert"
                             type="number"
                             min={0}
@@ -1582,7 +1472,6 @@ const SettingsPage = () => {
                               setCreditAlertThreshold(value === '' ? 0 : Number(value));
                             }}
                             disabled={integrationsDisabled}
-                            className="dw-input"
                           />
                           <p className="text-xs text-slate-500 md:col-start-2 dark:text-foreground/60">
                             Sends a bell notification when credits fall below this
@@ -1595,7 +1484,7 @@ const SettingsPage = () => {
                       <div className="mt-4 space-y-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="relative flex-1">
-                            <input
+                            <Input
                               type="text"
                               placeholder="Enter client ID"
                               value={deviantClientId}
@@ -1609,15 +1498,14 @@ const SettingsPage = () => {
                                 integrationsDisabled ||
                                 (deviantHasSecret && !deviantKeyEditable)
                               }
-                              className="dw-input pr-10"
+                              className="pr-10"
                             />
                             {deviantHasSecret && !deviantKeyEditable ? (
                               <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             ) : null}
                           </div>
                           {deviantHasSecret ? (
-                            <button
-                              type="button"
+                            <IconButton
                               onClick={() => {
                                 if (deviantKeyEditable) {
                                   setDeviantKeyEditable(false);
@@ -1638,18 +1526,19 @@ const SettingsPage = () => {
                                 deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'
                               }
                               title={deviantKeyEditable ? 'Cancel edit' : 'Edit API keys'}
-                              className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
+                              variant="outline"
+                              size="md"
                             >
                               {deviantKeyEditable ? (
                                 <X className="h-4 w-4" />
                               ) : (
                                 <PencilLine className="h-4 w-4" />
                               )}
-                            </button>
+                            </IconButton>
                           ) : null}
                         </div>
                         <div className="relative">
-                          <input
+                          <Input
                             type="password"
                             placeholder="Enter client secret"
                             value={deviantClientSecret}
@@ -1663,7 +1552,7 @@ const SettingsPage = () => {
                               integrationsDisabled ||
                               (deviantHasSecret && !deviantKeyEditable)
                             }
-                            className="dw-input pr-10"
+                            className="pr-10"
                           />
                           {deviantHasSecret && !deviantKeyEditable ? (
                             <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1674,8 +1563,8 @@ const SettingsPage = () => {
                   </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           )}
         </div>
       </section>

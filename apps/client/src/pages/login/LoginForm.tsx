@@ -2,6 +2,13 @@ import { FormEvent, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { useNavigate, Link } from '@tanstack/react-router';
+import {
+  Button,
+  Checkbox,
+  HelperText,
+  Input,
+  Label,
+} from '@dreamweaverstudio/client-ui';
 import { signInWithEmailPassword, signInWithGoogle } from '../../auth';
 
 const LoginForm: React.FC = () => {
@@ -64,13 +71,8 @@ const LoginForm: React.FC = () => {
 
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label
-            htmlFor="email-address"
-            className="dw-label"
-          >
-            Email
-          </label>
-          <input
+          <Label htmlFor="email-address">Email</Label>
+          <Input
             id="email-address"
             name="email"
             type="email"
@@ -79,15 +81,12 @@ const LoginForm: React.FC = () => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={isSubmitting}
-            className="dw-input"
             placeholder="name@example.com"
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="password" className="dw-label">
-            Password
-          </label>
-          <input
+          <Label htmlFor="password">Password</Label>
+          <Input
             id="password"
             name="password"
             type="password"
@@ -95,7 +94,6 @@ const LoginForm: React.FC = () => {
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="dw-input"
             placeholder="••••••••"
             disabled={isSubmitting}
           />
@@ -103,14 +101,12 @@ const LoginForm: React.FC = () => {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <input
+            <Checkbox
               id="remember-me"
               name="remember-me"
-              type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={isSubmitting}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label
               htmlFor="remember-me"
@@ -130,14 +126,16 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {error ? <p className="text-xs text-rose-400">{error}</p> : null}
-        <button
+        {error ? <HelperText className="text-rose-400">{error}</HelperText> : null}
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="dw-btn dw-btn-md dw-btn-primary w-full"
+          className="w-full"
+          size="md"
+          variant="primary"
         >
           {isSubmitting ? 'Signing in...' : 'Sign In'}
-        </button>
+        </Button>
       </form>
 
       <div className="mt-8 flex items-center gap-3 text-xs text-foreground/40">
@@ -147,15 +145,17 @@ const LoginForm: React.FC = () => {
       </div>
 
       <div className="mt-6 space-y-5">
-        <button
+        <Button
           type="button"
           onClick={handleGoogle}
           disabled={isSubmitting}
-          className="dw-btn dw-btn-md dw-btn-outline w-full justify-center gap-3"
+          className="w-full justify-center gap-3"
+          variant="outline"
+          size="md"
         >
           <FontAwesomeIcon icon={faGoogle} />
           Sign in with Google
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { Button, HelperText, Input, Label } from '@dreamweaverstudio/client-ui';
 import { sendPasswordReset } from '../../auth';
 
 const ForgotPasswordForm: React.FC = () => {
@@ -83,10 +84,8 @@ const ForgotPasswordForm: React.FC = () => {
       </div>
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label htmlFor="email-address" className="dw-label">
-            Email
-          </label>
-          <input
+          <Label htmlFor="email-address">Email</Label>
+          <Input
             id="email-address"
             name="email"
             type="email"
@@ -95,18 +94,19 @@ const ForgotPasswordForm: React.FC = () => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={isSubmitting}
-            className="dw-input"
             placeholder="name@example.com"
           />
         </div>
-        {error ? <p className="text-xs text-rose-400">{error}</p> : null}
-        <button
+        {error ? <HelperText className="text-rose-400">{error}</HelperText> : null}
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="dw-btn dw-btn-md dw-btn-primary w-full"
+          className="w-full"
+          size="md"
+          variant="primary"
         >
           {isSubmitting ? 'Sending...' : 'Send reset link'}
-        </button>
+        </Button>
       </form>
     </div>
   );

@@ -1,3 +1,4 @@
+import { Card, CardBody } from '@dreamweaverstudio/client-ui';
 import { formatNumber } from '../../utils/currency';
 
 type RenderPerformanceProps = {
@@ -14,8 +15,9 @@ const RenderPerformance = ({ locale = 'en-US' }: RenderPerformanceProps) => {
   ];
 
   return (
-    <section className="dw-card dw-card-body">
-      <div className="flex items-center justify-between">
+    <Card as="section">
+      <CardBody>
+        <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-foreground">
           Top regions
         </h3>
@@ -40,7 +42,8 @@ const RenderPerformance = ({ locale = 'en-US' }: RenderPerformanceProps) => {
           ))}
         </div>
       </div>
-    </section>
+      </CardBody>
+    </Card>
   );
 };
 

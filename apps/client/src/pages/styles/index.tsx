@@ -27,6 +27,19 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardHeader,
+  HelperText,
+  IconButton,
+  Input,
+  Label,
+  Select,
+  useToast,
+} from '@dreamweaverstudio/client-ui';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 
 const StylesListPage = () => {
@@ -39,9 +52,7 @@ const StylesListPage = () => {
     'all',
   );
   const [deleteTarget, setDeleteTarget] = useState<ComicStyle | null>(null);
-  const [toasts, setToasts] = useState<
-    { id: number; type: 'success' | 'error'; message: string }[]
-  >([]);
+  const { pushToast } = useToast();
 
   const handleUnauthorized = async (err: unknown) => {
     if (err instanceof Error && err.message === 'unauthorized') {
@@ -55,16 +66,6 @@ const StylesListPage = () => {
   useEffect(() => {
     document.title = 'Styles — DreamWeaverComics Studio';
   }, []);
-
-  const pushToast = (type: 'success' | 'error', message: string) => {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-    setToasts((prev) => [...prev, { id, type, message }]);
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
-      }, 3200);
-    }
-  };
 
   const stylesQuery = useQuery({
     queryKey: ['styles', { pageIndex, pageSize, search, statusFilter }],
@@ -134,9 +135,9 @@ const StylesListPage = () => {
                 <p className="text-sm font-semibold text-slate-900 dark:text-foreground">
                   {row.name}
                 </p>
-                <p className="dw-helper">
+                <HelperText>
                   {row.description || row.key || 'No description'}
-                </p>
+                </HelperText>
               </div>
             </div>
           );
@@ -149,20 +150,14 @@ const StylesListPage = () => {
           const value = info.getValue() as ComicStyle['status'];
           const isArchived = value === 'archived';
           return (
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] ${
-                isArchived
-                  ? 'border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-              }`}
-            >
+            <Badge variant={isArchived ? 'danger' : 'success'}>
               {isArchived ? (
                 <XCircle className="h-3.5 w-3.5" />
               ) : (
                 <CheckCircle2 className="h-3.5 w-3.5" />
               )}
               {isArchived ? 'Archived' : 'Active'}
-            </span>
+            </Badge>
           );
         },
       },
@@ -172,9 +167,9 @@ const StylesListPage = () => {
         cell: (info) => {
           const value = info.getValue() as string | undefined;
           return (
-            <span className="dw-helper">
+            <HelperText as="span">
               {value ? new Date(value).toLocaleDateString() : '—'}
-            </span>
+            </HelperText>
           );
         },
       },
@@ -184,9 +179,9 @@ const StylesListPage = () => {
         cell: (info) => {
           const value = info.getValue() as string | undefined;
           return (
-            <span className="dw-helper">
+            <HelperText as="span">
               {value ? new Date(value).toLocaleDateString() : '—'}
-            </span>
+            </HelperText>
           );
         },
       },
@@ -197,19 +192,18 @@ const StylesListPage = () => {
           const row = info.row.original;
           return (
             <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
+              <IconButton
                 onClick={(event) => {
                   event.stopPropagation();
                   navigate({ to: `/styles/${row.id}` });
                 }}
-                className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-outline"
                 aria-label="Edit style"
+                variant="outline"
+                size="sm"
               >
                 <PencilLine className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
+              </IconButton>
+              <IconButton
                 onClick={(event) => {
                   event.stopPropagation();
                   if (row.isDefault && row.status === 'archived') {
@@ -227,27 +221,27 @@ const StylesListPage = () => {
                   defaultMutation.isPending ||
                   (!row.isDefault && row.status === 'archived')
                 }
-                className={`dw-btn-icon dw-btn-icon-sm ${
-                  row.isDefault
-                    ? 'dw-btn-icon-warn'
-                    : row.status === 'archived'
-                      ? 'border-slate-200 bg-slate-50 text-slate-300 dark:border-border dark:bg-background dark:text-foreground/40'
-                      : 'dw-btn-icon-outline'
-                }`}
+                variant={row.isDefault ? 'warn' : 'outline'}
+                size="sm"
+                className={
+                  row.status === 'archived' && !row.isDefault
+                    ? 'border-slate-200 bg-slate-50 text-slate-300 dark:border-border dark:bg-background dark:text-foreground/40'
+                    : undefined
+                }
               >
                 <Star className={`h-4 w-4 ${row.isDefault ? 'fill-current' : ''}`} />
-              </button>
-              <button
-                type="button"
+              </IconButton>
+              <IconButton
                 onClick={(event) => {
                   event.stopPropagation();
                   setDeleteTarget(row);
                 }}
-                className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-danger"
                 aria-label="Delete style"
+                variant="danger"
+                size="sm"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
+              </IconButton>
             </div>
           );
         },
@@ -278,27 +272,8 @@ const StylesListPage = () => {
   const error = stylesQuery.isError ? 'Unable to load styles.' : null;
   return (
     <>
-      <div className="pointer-events-none fixed right-6 top-6 z-50 flex flex-col gap-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${
-              toast.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'
-            }`}
-          >
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                toast.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'
-              }`}
-            />
-            {toast.message}
-          </div>
-        ))}
-      </div>
-      <div className="dw-card">
-        <div className="dw-card-header">
+      <Card>
+        <CardHeader>
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-foreground/50">
               Catalog
@@ -311,31 +286,27 @@ const StylesListPage = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
+            <IconButton
               onClick={() => stylesQuery.refetch()}
               disabled={stylesQuery.isFetching}
-              className="dw-btn-icon dw-btn-icon-md dw-btn-icon-outline"
               aria-label="Reload styles"
+              variant="outline"
+              size="md"
             >
               <RefreshCcw
                 className={`h-4 w-4 ${stylesQuery.isFetching ? 'animate-spin' : ''}`}
               />
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate({ to: '/styles/new' })}
-              className="dw-btn dw-btn-md dw-btn-primary"
-            >
+            </IconButton>
+            <Button onClick={() => navigate({ to: '/styles/new' })} size="md">
               <Plus className="h-4 w-4" />
               New style
-            </button>
+            </Button>
           </div>
-        </div>
+        </CardHeader>
 
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-6 py-4 dark:border-border">
           <div className="relative flex-1 min-w-[220px]">
-            <input
+            <Input
               type="text"
               value={search}
               onChange={(event) => {
@@ -343,31 +314,30 @@ const StylesListPage = () => {
                 setPageIndex(0);
               }}
               placeholder="Search styles"
-              className="dw-input pr-10"
+              className="pr-10"
             />
             <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
           <div className="relative">
-            <select
+            <Select
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value as 'all' | 'active' | 'archived');
                 setPageIndex(0);
               }}
-              className="dw-select"
             >
               <option value="all">All statuses</option>
               <option value="active">Active only</option>
               <option value="archived">Archived</option>
-            </select>
+            </Select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
 
         {error ? (
-          <div className="mx-6 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+          <Alert variant="danger" className="mx-6 mt-4">
             {error}
-          </div>
+          </Alert>
         ) : null}
 
         <div className="px-6 py-4">
@@ -437,45 +407,43 @@ const StylesListPage = () => {
             Page {pageIndex + 1} of {totalPages} • {total} styles
           </span>
           <div className="flex items-center gap-2">
-            <label className="dw-label">
-              Per page
-            </label>
+            <Label>Per page</Label>
             <div className="relative">
-              <select
+              <Select
                 value={pageSize}
                 onChange={(event) => {
                   setPageSize(Number(event.target.value));
                   setPageIndex(0);
                 }}
-                className="dw-select dw-select-sm"
+                size="sm"
               >
                 <option value={8}>8</option>
                 <option value={12}>12</option>
                 <option value={20}>20</option>
-              </select>
+              </Select>
               <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
             </div>
-            <button
-              type="button"
+            <IconButton
               onClick={() => setPageIndex((prev) => Math.max(prev - 1, 0))}
               disabled={pageIndex === 0}
-              className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-outline"
+              variant="outline"
+              size="sm"
             >
               <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
+            </IconButton>
+            <IconButton
               onClick={() =>
                 setPageIndex((prev) => Math.min(prev + 1, totalPages - 1))
               }
               disabled={pageIndex >= totalPages - 1}
-              className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-outline"
+              variant="outline"
+              size="sm"
             >
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </IconButton>
           </div>
         </div>
-      </div>
+      </Card>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

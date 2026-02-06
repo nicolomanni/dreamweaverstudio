@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { Button, Card, IconButton } from '@dreamweaverstudio/client-ui';
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -48,7 +49,7 @@ export const ConfirmDialog = ({
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
     >
-      <div className="dw-card w-full max-w-md overflow-hidden shadow-2xl">
+      <Card className="w-full max-w-md overflow-hidden shadow-2xl">
         <div className="flex items-start gap-3 px-5 py-4">
           <span
             className={`flex h-10 w-10 items-center justify-center rounded-full border ${toneStyles[tone]}`}
@@ -66,32 +67,29 @@ export const ConfirmDialog = ({
               {description}
             </p>
           </div>
-          <button
-            type="button"
+          <IconButton
             onClick={onCancel}
             aria-label="Close dialog"
-            className="dw-btn-icon dw-btn-icon-sm dw-btn-icon-ghost"
+            variant="ghost"
+            size="sm"
           >
             <X className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
         <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-border">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="dw-btn dw-btn-md dw-btn-outline"
-          >
+          <Button onClick={onCancel} variant="outline" size="md">
             {cancelLabel}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={onConfirm}
-            className={`dw-btn dw-btn-md ${confirmButtonStyles[tone]}`}
+            variant="primary"
+            size="md"
+            className={confirmButtonStyles[tone]}
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
