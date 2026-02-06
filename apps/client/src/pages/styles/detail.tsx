@@ -110,7 +110,7 @@ const StyleDetailPage = () => {
 
   const styleQuery = useQuery({
     queryKey: ['style', styleId],
-    queryFn: () => fetchStyle(styleId),
+    queryFn: () => fetchStyle(styleId!),
     enabled: Boolean(styleId),
   });
 
@@ -128,7 +128,7 @@ const StyleDetailPage = () => {
   }, [styleQuery.data]);
 
   const updateMutation = useMutation({
-    mutationFn: (payload: Partial<ComicStyle>) => updateStyle(styleId, payload),
+    mutationFn: (payload: Partial<ComicStyle>) => updateStyle(styleId!, payload),
     onSuccess: (saved) => {
       setStyle(saved);
       setDraft(buildDraft(saved));
@@ -202,7 +202,7 @@ const StyleDetailPage = () => {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteStyle(styleId),
+    mutationFn: () => deleteStyle(styleId!),
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['styles'] });
       queryClient.removeQueries({ queryKey: ['style', styleId] });
@@ -276,14 +276,6 @@ const StyleDetailPage = () => {
               <ChevronLeft className="h-4 w-4" />
               Back to list
             </Button>
-            {isDirty ? (
-              <Badge
-                variant="warning"
-                className="px-3 py-1 text-[10px] tracking-[0.3em]"
-              >
-                Unsaved changes
-              </Badge>
-            ) : null}
           </div>
         </CardHeader>
 
@@ -772,6 +764,14 @@ const StyleDetailPage = () => {
             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>
           <div className="flex flex-wrap items-center gap-2 self-center">
+            {isDirty ? (
+              <Badge
+                variant="warning"
+                className="px-3 py-1 text-[10px] tracking-[0.3em]"
+              >
+                Unsaved changes
+              </Badge>
+            ) : null}
             <Button
               onClick={handleSave}
               disabled={

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import {
   Alert,
+  Badge,
   Button,
   Card,
   CardBody,
@@ -929,23 +930,33 @@ const StyleCreatePage = () => {
           <Button onClick={handleDiscard} variant="outline" size="md">
             Discard
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={
-              createMutation.isPending ||
-              !canShowForm ||
-              uploadingPreview ||
-              previewMutation.isPending
-            }
-            size="lg"
-            variant="primary"
-          >
-            {uploadingPreview
-              ? 'Uploading preview...'
-              : createMutation.isPending
-                ? 'Saving...'
-                : 'Create style'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {isDirty ? (
+              <Badge
+                variant="warning"
+                className="px-3 py-1 text-[10px] tracking-[0.3em]"
+              >
+                Unsaved changes
+              </Badge>
+            ) : null}
+            <Button
+              onClick={handleSave}
+              disabled={
+                createMutation.isPending ||
+                !canShowForm ||
+                uploadingPreview ||
+                previewMutation.isPending
+              }
+              size="lg"
+              variant="primary"
+            >
+              {uploadingPreview
+                ? 'Uploading preview...'
+                : createMutation.isPending
+                  ? 'Saving...'
+                  : 'Create style'}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 

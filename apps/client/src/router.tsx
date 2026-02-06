@@ -16,6 +16,9 @@ import SettingsPage from './pages/settings';
 import StylesListPage from './pages/styles';
 import StyleCreatePage from './pages/styles/new';
 import StyleDetailPage from './pages/styles/detail';
+import PageTemplatesListPage from './pages/page-templates';
+import PageTemplateCreatePage from './pages/page-templates/new';
+import PageTemplateDetailPage from './pages/page-templates/detail';
 import { getAuthState } from './auth';
 import { subscribeLoading } from '@dreamweaverstudio/client-data-access-api';
 import ProtectedLayout from './layouts/ProtectedLayout';
@@ -158,6 +161,24 @@ const stylesDetailRoute = createRoute({
   component: StyleDetailPage,
 });
 
+const pageTemplatesRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/page-templates',
+  component: PageTemplatesListPage,
+});
+
+const pageTemplatesNewRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/page-templates/new',
+  component: PageTemplateCreatePage,
+});
+
+const pageTemplatesDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/page-templates/$templateId',
+  component: PageTemplateDetailPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   forgotPasswordRoute,
@@ -167,6 +188,9 @@ const routeTree = rootRoute.addChildren([
     stylesRoute,
     stylesNewRoute,
     stylesDetailRoute,
+    pageTemplatesRoute,
+    pageTemplatesNewRoute,
+    pageTemplatesDetailRoute,
   ]),
 ]);
 

@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import {
+  BookOpen,
   ChevronLeft,
   ChevronDown,
   Coins,
@@ -26,7 +27,7 @@ import { Input } from './components/Input';
 import { MenuItem } from './components/MenuItem';
 
 type NavItem = {
-  id: 'analytics' | 'settings' | 'styles';
+  id: 'analytics' | 'settings' | 'styles' | 'pageTemplates';
   label: string;
   icon: LucideIcon;
   href: string;
@@ -53,6 +54,12 @@ const generalItems: NavItem[] = [
     label: 'Styles',
     icon: Palette,
     href: '/styles',
+  },
+  {
+    id: 'pageTemplates',
+    label: 'Page Templates',
+    icon: BookOpen,
+    href: '/page-templates',
   },
 ];
 

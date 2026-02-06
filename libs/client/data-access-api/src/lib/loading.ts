@@ -20,7 +20,9 @@ export const endLoading = () => {
 export const subscribeLoading = (listener: LoadingListener) => {
   listeners.add(listener);
   listener(activeRequests);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
 export const getLoadingCount = () => activeRequests;

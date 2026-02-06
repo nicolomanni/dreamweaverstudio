@@ -15,6 +15,7 @@ import { StudioProvider } from '../context/StudioContext';
 const resolveActiveNav = (pathname: string) => {
   if (pathname.startsWith('/settings')) return 'settings';
   if (pathname.startsWith('/styles')) return 'styles';
+  if (pathname.startsWith('/page-templates')) return 'pageTemplates';
   if (pathname.startsWith('/dashboard')) return 'analytics';
   return 'analytics';
 };

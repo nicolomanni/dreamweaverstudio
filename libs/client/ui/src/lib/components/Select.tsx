@@ -1,7 +1,10 @@
 import { forwardRef } from 'react';
 import { cn } from '../utils/cn';
 
-export type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
+export type SelectProps = Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  'size'
+> & {
   size?: 'sm' | 'md';
   error?: boolean;
 };
